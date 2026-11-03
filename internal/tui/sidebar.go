@@ -6,8 +6,9 @@ import (
 	"tribal-age/internal/game"
 )
 
-func (m *model) sidebarGroups(v game.View, f game.Forecast, compact bool) [][]string {
+func (m *model) sidebarGroups(v game.View, f game.Forecast, l layout) [][]string {
 	t, p := v.Self, f.Production
+	compact := !l.roomy
 	name, policy := t.Name, "生产：自动（农田优先）"
 	if !t.Alive() {
 		name += " [灭亡]"
@@ -33,7 +34,7 @@ func (m *model) sidebarGroups(v game.View, f game.Forecast, compact bool) [][]st
 	}
 	return [][]string{
 		identity,
-		m.mapView.factionLines(v, !compact),
+		m.mapView.factionLines(v, !compact, l.rightWidth),
 		{fmt.Sprintf("粮食：%d (上月%+d)", t.Food, t.LastChange.Food), fmt.Sprintf("收支 %+d / 余粮 %d", f.NetFood, f.FoodAfter),
 			fmt.Sprintf("木材：%d (上月%+d)", t.Wood, t.LastChange.Wood), fmt.Sprintf("本月预计 %+d", p.Wood)},
 		{fmt.Sprintf("人手%d格：田%d 林%d", p.Slots, len(p.Farms), len(p.Forests)), policy,
@@ -43,7 +44,7 @@ func (m *model) sidebarGroups(v game.View, f game.Forecast, compact bool) [][]st
 
 // Spend spare rows on group gaps, not on clipping resources or growth reasons.
 func (m *model) sidebarLines(v game.View, f game.Forecast, l layout) []string {
-	groups := m.sidebarGroups(v, f, !l.roomy)
+	groups := m.sidebarGroups(v, f, l)
 	rows := 0
 	for i, group := range groups {
 		groups[i] = wrapLines(group, l.rightWidth)

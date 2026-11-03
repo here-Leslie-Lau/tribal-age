@@ -36,7 +36,7 @@ func TestUnseenFactionsAreNotReportedAsExtinct(t *testing.T) {
 	}
 	m.Update(tea.WindowSizeMsg{Width: 120, Height: 36})
 	content := ansi.Strip(m.View().Content)
-	for _, text := range []string{"我方1格", "部落2 暂无已知领地", "部落3 暂无已知领地"} {
+	for _, text := range []string{"大陆局势（已知）", "我方1格", "部落2 未知", "部落3 未知"} {
 		if !strings.Contains(content, text) {
 			t.Fatalf("missing unknown-faction explanation %q", text)
 		}
@@ -73,7 +73,7 @@ func TestFactionStatsKeepEssentialSidebarFeedbackAtEverySize(t *testing.T) {
 			}
 		}
 		if size[1] >= 32 {
-			for _, want := range []string{"我方3格", "部落2 已发现1格", "部落3 已发现1格"} {
+			for _, want := range []string{"大陆局势（已知）", "我方3格", "部落2 1格", "部落3 1格"} {
 				if !strings.Contains(text, want) {
 					t.Fatalf("size %v clipped expanded stats %q", size, want)
 				}

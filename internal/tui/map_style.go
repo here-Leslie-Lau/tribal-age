@@ -51,7 +51,7 @@ func (s mapStyle) paint(text string, t mapTone, selected bool) string {
 	}
 	style := ansi.NewStyle().ForegroundColor(s.profile.Convert(fg)).BackgroundColor(s.profile.Convert(bg))
 	if selected {
-		style = style.Bold()
+		style = style.Bold().Reverse(true)
 	}
 	return style.Styled(text)
 }
