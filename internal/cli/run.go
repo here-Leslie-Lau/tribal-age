@@ -9,39 +9,64 @@ import (
 	"strings"
 
 	"tribal-age/internal/game"
+	"tribal-age/internal/tui"
 )
 
-const usage = "用法：\n  tribal-age play --seed 42\n  tribal-age simulate --seed 42 --months 120\n"
+const usage = "用法：\n  tribal-age play --seed 42          方向键界面\n  tribal-age play --cli --seed 42    原逐行命令\n  tribal-age simulate --seed 42 --months 120\n"
 
 func Run(args []string, input io.Reader, output io.Writer) error {
-	if len(args) == 0 || args[0] == "help" || args[0] == "--help" || args[0] == "-h" {
+	o, err := parseOptions(args)
+	if errors.Is(err, flag.ErrHelp) {
 		return writeText(output, usage)
 	}
-	mode := args[0]
-	if mode != "play" && mode != "simulate" {
-		return fmt.Errorf("未知模式 %q；请使用 play 或 simulate", mode)
-	}
-	flags := flag.NewFlagSet(mode, flag.ContinueOnError)
-	flags.SetOutput(io.Discard)
-	seed := flags.Int64("seed", 42, "地图随机种子")
-	months := 120
-	if mode == "simulate" {
-		flags.IntVar(&months, "months", 120, "模拟月数（非负整数）")
-	}
-	if err := flags.Parse(args[1:]); err != nil {
-		if errors.Is(err, flag.ErrHelp) {
-			return writeText(output, usage)
-		}
+	if err != nil {
 		return err
 	}
+	s := game.New(o.seed)
+	if o.mode == "play" {
+		if o.lineMode || !tui.CanRun(input, output) {
+			return play(s, input, output)
+		}
+		return tui.Run(s, input, output)
+	}
+	return simulate(s, o.months, output)
+}
+
+type options struct {
+	mode     string
+	seed     int64
+	months   int
+	lineMode bool
+}
+
+func parseOptions(args []string) (options, error) {
+	if len(args) == 0 {
+		return options{}, flag.ErrHelp
+	}
+	mode := args[0]
+	switch mode {
+	case "help", "--help", "-h":
+		return options{}, flag.ErrHelp
+	case "play", "simulate":
+	default:
+		return options{}, fmt.Errorf("未知模式 %q；请使用 play 或 simulate", mode)
+	}
+	o := options{mode: mode, months: 120}
+	flags := flag.NewFlagSet(mode, flag.ContinueOnError)
+	flags.SetOutput(io.Discard)
+	flags.Int64Var(&o.seed, "seed", 42, "地图随机种子")
+	if mode == "simulate" {
+		flags.IntVar(&o.months, "months", 120, "模拟月数（非负整数）")
+	} else {
+		flags.BoolVar(&o.lineMode, "cli", false, "使用原逐行命令")
+	}
+	if err := flags.Parse(args[1:]); err != nil {
+		return options{}, err
+	}
 	if flags.NArg() != 0 {
-		return fmt.Errorf("不接受额外参数：%s", strings.Join(flags.Args(), " "))
+		return options{}, fmt.Errorf("不接受额外参数：%s", strings.Join(flags.Args(), " "))
 	}
-	s := game.New(*seed)
-	if mode == "play" {
-		return play(s, input, output)
-	}
-	return simulate(s, months, output)
+	return o, nil
 }
 
 func play(s *game.State, input io.Reader, output io.Writer) error {
