@@ -7,28 +7,25 @@ import (
 	"tribal-age/internal/game"
 )
 
-func mapLines(v game.View, cursor game.Point, l layout) []string {
+func mapLines(v game.View, cursor game.Point, l layout, style mapStyle) []string {
 	var known [game.Height][game.Width]*game.Cell
 	for i := range v.Cells {
 		c := &v.Cells[i]
 		known[c.Point.Y][c.Point.X] = c
 	}
-	lines := []string{fmt.Sprintf("地图 x:%d..%d y:%d..%d", l.left, l.left+l.cols-1, l.top, l.top+l.rows-1)}
+	lines := []string{fmt.Sprintf("%s x:%d..%d y:%d..%d", style.name(), l.left, l.left+l.cols-1, l.top, l.top+l.rows-1)}
 	var header strings.Builder
 	header.WriteString("    ")
 	for x := l.left; x < l.left+l.cols; x++ {
-		fmt.Fprintf(&header, "%*d", mapCellWidth, x)
+		fmt.Fprintf(&header, " %-2d ", x)
 	}
 	lines = append(lines, header.String())
 	for y := l.top; y < l.top+l.rows; y++ {
 		var row strings.Builder
 		fmt.Fprintf(&row, "%02d |", y)
 		for x := l.left; x < l.left+l.cols; x++ {
-			marker := byte(' ')
-			if cursor == (game.Point{X: x, Y: y}) {
-				marker = '>'
-			}
-			fmt.Fprintf(&row, "%-*s", mapCellWidth, fmt.Sprintf("%c%s", marker, tileText(known[y][x], v.Self)))
+			selected := cursor == (game.Point{X: x, Y: y})
+			row.WriteString(style.cell(known[y][x], v.Self, selected))
 		}
 		lines = append(lines, row.String())
 	}

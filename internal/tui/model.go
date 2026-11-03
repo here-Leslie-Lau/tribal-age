@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"os"
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
@@ -47,11 +48,14 @@ type model struct {
 	dialog         dialog
 	workTarget     int
 	territoryIndex int
+	mapView        mapStyle
+	plainMap       bool
 	messages       []string
 }
 
 func newModel(s *game.State) *model {
 	return &model{state: s, cursor: s.Tribes[0].Capital, width: minWidth, height: minHeight,
+		plainMap: os.Getenv("NO_COLOR") != "" || os.Getenv("TERM") == "dumb",
 		messages: []string{"方向键选地块；光标和菜单不花行动点，只有确认结束月份才推进。"}}
 }
 
@@ -62,6 +66,10 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.width, m.height = max(0, msg.Width), max(0, msg.Height)
+	case tea.ColorProfileMsg:
+		if !m.plainMap {
+			m.mapView.profile = msg.Profile
+		}
 	case tea.KeyPressMsg:
 		cmd = m.handleKey(strings.ToLower(msg.String()))
 	}
@@ -108,6 +116,10 @@ func (m *model) gameKey(key string) {
 			return
 		}
 	}
+	m.controlKey(key)
+}
+
+func (m *model) controlKey(key string) {
 	switch key {
 	case "enter":
 		m.dialog = endDialog
@@ -119,6 +131,8 @@ func (m *model) gameKey(key string) {
 		m.dialog = helpDialog
 	case "l":
 		m.openTerritories()
+	case "v":
+		m.mapView.terrain = !m.mapView.terrain
 	}
 }
 

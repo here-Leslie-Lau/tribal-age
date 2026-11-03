@@ -51,16 +51,12 @@ func (m *model) screen() string {
 	f := game.ForecastFor(v)
 	lines := []string{
 		fmt.Sprintf("部落纪元 | 行动点：%d/%d | %s", v.Self.AP, game.MonthlyAP, v.Calendar),
-		">光标 @首都 P我方 2/3他部落 .草原 f森林 ^山 =河 ~海 ?未知",
+		m.mapView.legend(),
 	}
 	if l.roomy {
 		lines = []string{lines[0], "", lines[1], ""}
 	}
-	sidebar := m.sidebar(v, f)
-	if l.roomy {
-		sidebar = spacedSidebar(sidebar)
-	}
-	left, right := mapLines(v, m.cursor, l), wrapLines(sidebar, l.rightWidth)
+	left, right := mapLines(v, m.cursor, l, m.mapView), m.sidebarLines(v, f, l)
 	for i := 0; i < l.rows+2; i++ {
 		lines = append(lines, fitRow(lineAt(left, i), l.leftWidth)+l.gap+fitRow(lineAt(right, i), l.rightWidth))
 	}
@@ -76,36 +72,8 @@ func (m *model) screen() string {
 		lines = append(lines, "")
 	}
 	lines = append(lines, "方向键/WASD移动 | E探索 C占领 B建田 | T训练 P生产 L领地",
-		"Enter结束本月(需Y确认) | ?帮助 | Q退出(无存档)")
+		"Enter结束本月(需Y确认) | V切换视图 ?帮助 | Q退出(无存档)")
 	return l.frame(lines)
-}
-
-func (m *model) sidebar(v game.View, f game.Forecast) []string {
-	t, p := v.Self, f.Production
-	name, policy := t.Name, "生产：自动（农田优先）"
-	if !t.Alive() {
-		name += " [灭亡]"
-	}
-	if m.dialog == productionDialog {
-		name += " [草稿]"
-	}
-	if t.ForestPriority > 0 {
-		policy = fmt.Sprintf("生产：优先采木%d格", t.ForestPriority)
-	}
-	growth := "增长：本月可积累"
-	if f.Growth.Reason != "" {
-		growth = "增长：" + f.Growth.Reason
-	}
-	hunger := fmt.Sprintf("连续缺粮：%d月", t.HungerMonths)
-	if f.Shortage > 0 {
-		hunger = fmt.Sprintf("缺粮预警 %d粮 / 连缺%d月", f.Shortage, t.HungerMonths)
-	}
-	return []string{name, fmt.Sprintf("人口：%d/%d", t.Population, f.Growth.Capacity),
-		fmt.Sprintf("士兵%d / 平民%d", t.Soldiers, t.Population-t.Soldiers),
-		fmt.Sprintf("粮食：%d (上月%+d)", t.Food, t.LastChange.Food), fmt.Sprintf("收支 %+d / 余粮 %d", f.NetFood, f.FoodAfter),
-		fmt.Sprintf("木材：%d (上月%+d)", t.Wood, t.LastChange.Wood), fmt.Sprintf("本月预计 %+d", p.Wood),
-		fmt.Sprintf("人手%d格：田%d 林%d", p.Slots, len(p.Farms), len(p.Forests)), policy,
-		fmt.Sprintf("增长%d/%d / 安全粮%d", t.GrowthProgress, game.GrowthMonths, f.Growth.Reserve), hunger, growth}
 }
 
 func (m *model) smallScreen() string {
@@ -143,17 +111,6 @@ func wrapLines(lines []string, width int) []string {
 	var out []string
 	for _, line := range lines {
 		out = append(out, strings.Split(ansi.Hardwrap(line, width, true), "\n")...)
-	}
-	return out
-}
-
-func spacedSidebar(lines []string) []string {
-	var out []string
-	for i, line := range lines {
-		out = append(out, line)
-		if i == 0 || i == 2 || i == 6 {
-			out = append(out, "")
-		}
 	}
 	return out
 }

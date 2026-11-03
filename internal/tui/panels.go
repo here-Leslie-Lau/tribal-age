@@ -21,8 +21,8 @@ func (m *model) panelLines(v game.View, f game.Forecast, width, rows int) []stri
 	case productionDialog:
 		return productionPanel(v, f)
 	case helpDialog:
-		return []string{"帮助：方向键/WASD移动光标，不花行动点。", "E探索 C占领 B建田；T训练 P生产 L领地一览。",
-			"Enter结束月份、Q退出都需Y确认；只有结束月份推进时间。", "地图每格：地形+归属，>标记选中位置。Esc/?返回。"}
+		return []string{"帮助：方向键/WASD选地块；[]是光标，@是首都。", "E探索 C占领 B建田；T训练 P生产 L领地 V切换视图。",
+			"Enter结束月份、Q退出需Y确认；Esc/?返回。", "底色看领土/地形；无色看P/2/3。统计?表示暂无已知领地。"}
 	}
 	heading := "最近消息："
 	if !v.Self.Alive() {

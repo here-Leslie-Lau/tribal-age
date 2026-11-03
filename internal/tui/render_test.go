@@ -15,7 +15,7 @@ func TestScreenKeepsMapStateActionsAndLegendTogether(t *testing.T) {
 	m := newModel(s)
 	before := snapshot(s)
 	v := m.View()
-	for _, text := range []string{"部落纪元", "第 1 年 3 月", "行动点：2/2", "人口：30/30", "粮食：60", "木材：20", ">.@", "??", "选中", "农田", "10木", "WASD", "P生产", "Enter", "Q退出", "@首都", "f森林"} {
+	for _, text := range []string{"部落纪元", "第 1 年 3 月", "行动点：2/2", "人口：30/30", "粮食：60", "木材：20", "[.@]", "??", "选中", "农田", "10木", "WASD", "P生产", "Enter", "Q退出", "@首都", "f森林"} {
 		if !strings.Contains(v.Content, text) {
 			t.Fatalf("missing %q:\n%s", text, v.Content)
 		}
@@ -54,7 +54,7 @@ func TestScreenFitsTerminalAndTracksCursorViewport(t *testing.T) {
 		press(m, "right", "down")
 	}
 	content := m.View().Content
-	if !strings.Contains(content, "选中 (23,15)") || !strings.Contains(content, ">??") || !strings.Contains(content, "未探索") {
+	if !strings.Contains(content, "选中 (23,15)") || !strings.Contains(content, "[??]") || !strings.Contains(content, "未探索") {
 		t.Fatalf("viewport lost cursor at map edge:\n%s", content)
 	}
 }
