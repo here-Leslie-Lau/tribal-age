@@ -53,17 +53,19 @@ type Tile struct {
 type Stock struct{ Food, Wood int }
 
 type Tribe struct {
-	ID         int
-	Name       string
-	Capital    Point
-	Population int
-	Soldiers   int
-	Food       int
-	Wood       int
-	AP         int
-	Explored   [Height][Width]bool
-	LastChange Stock
-	monthStart Stock
+	ID             int
+	Name           string
+	Capital        Point
+	Population     int
+	Soldiers       int
+	Food           int
+	Wood           int
+	AP             int
+	GrowthProgress int
+	HungerMonths   int
+	Explored       [Height][Width]bool
+	LastChange     Stock
+	monthStart     Stock
 }
 
 func (t Tribe) Alive() bool { return t.Population > 0 }
@@ -125,6 +127,9 @@ func (s *State) Validate() error {
 }
 
 func (s *State) validateTribe(id int, t Tribe) error {
+	if err := validatePopulationRecords(t); err != nil {
+		return err
+	}
 	if t.ID != id || !t.Capital.Valid() {
 		return fmt.Errorf("部落身份或首都无效: %d", id)
 	}

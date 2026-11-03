@@ -49,6 +49,20 @@ func TestLongSimulationAndActionReplay(t *testing.T) {
 				if !reflect.DeepEqual(stepped.VisibleEvents(id, 0), automatic.VisibleEvents(id, 0)) {
 					t.Fatal("event output not reproducible")
 				}
+				v, err := automatic.View(id)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if v.Self.Population > InitialPopulation+(month+1)/GrowthMonths*GrowthPeople {
+					t.Fatal("population grew faster than the three-month rule")
+				}
+				if v.Self.Alive() && v.Self.Population > CarryingCapacity(v) {
+					t.Fatal("new population exceeded territory capacity")
+				}
+				production := ProductionFor(v, v.Calendar.Season())
+				if len(production.Farms)+len(production.Forests) > v.Self.WorkSlots() {
+					t.Fatal("production assignments exceeded available workers")
+				}
 			}
 		}
 		if stepped.Calendar.Elapsed != 120 || stepped.Calendar.Year() != 11 || stepped.Calendar.Month() != 3 {
@@ -63,6 +77,11 @@ func FuzzActionInvariants(f *testing.F) {
 	f.Add([]byte{255, 255, 255, 255})
 	p := New(42).Tribes[0].Capital
 	f.Add([]byte{byte(BuildFarm), byte(p.X), byte(p.Y), 1, byte(Explore), byte(p.X), byte(p.Y - 1), 1, 4, byte(Simulation), 0, 0})
+	var growing []byte
+	for month := 0; month < 12; month++ {
+		growing = append(growing, 4, byte(Simulation), 0, 0)
+	}
+	f.Add(growing)
 	f.Fuzz(func(t *testing.T, data []byte) {
 		s := New(42)
 		for i := 0; i+3 < min(len(data), 512); i += 4 {

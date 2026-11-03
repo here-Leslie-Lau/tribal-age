@@ -54,11 +54,17 @@ func TestMonthlyHandExamples(t *testing.T) {
 		}
 	})
 	t.Run("starvation and soldier clamp", func(t *testing.T) {
-		for _, tt := range []struct{ pop, soldiers, food, wantPop, wantSoldiers int }{{30, 5, 3, 26, 5}, {6, 5, 0, 3, 3}} {
+		for _, tt := range []struct{ pop, soldiers, food, wantPop, wantSoldiers int }{{30, 5, 3, 23, 5}, {6, 5, 0, 3, 3}} {
 			s := scenarioState()
 			s.Tribes[0].Population = tt.pop
 			s.Tribes[0].Soldiers = tt.soldiers
 			s.Tribes[0].Food = tt.food
+			if err := s.EndMonth(Interactive); err != nil {
+				t.Fatal(err)
+			}
+			if s.Tribes[0].Population != tt.pop || s.Tribes[0].Soldiers != tt.soldiers || s.Tribes[0].Food != 0 {
+				t.Fatal("first shortage must grant a grace month without reducing population")
+			}
 			if err := s.EndMonth(Interactive); err != nil {
 				t.Fatal(err)
 			}
@@ -135,8 +141,17 @@ func TestExtinctionCleanupAndTerminalMonth(t *testing.T) {
 	if err := s.EndMonth(Interactive); err != nil {
 		t.Fatal(err)
 	}
-	if !s.AllExtinct() || s.Calendar.Elapsed != 1 {
-		t.Fatal("all should be extinct after one month")
+	if s.AllExtinct() || s.Calendar.Elapsed != 1 {
+		t.Fatal("first shortage must not kill tribes")
+	}
+	if err := s.Validate(); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.EndMonth(Interactive); err != nil {
+		t.Fatal(err)
+	}
+	if !s.AllExtinct() || s.Calendar.Elapsed != 2 {
+		t.Fatal("continuous shortage should kill these tribes after two months")
 	}
 	for _, tribe := range s.Tribes {
 		if tribe.Food != 0 || tribe.Wood != 0 || tribe.Soldiers != 0 || tribe.AP != 0 {
@@ -171,6 +186,12 @@ func TestSingleExtinctionDoesNotStopSimulation(t *testing.T) {
 	if err := s.EndMonth(Simulation); err != nil {
 		t.Fatal(err)
 	}
+	if !s.Tribes[0].Alive() {
+		t.Fatal("first shortage must grant the player a grace month")
+	}
+	if err := s.EndMonth(Simulation); err != nil {
+		t.Fatal(err)
+	}
 	if s.Tribes[0].Alive() || s.AllExtinct() {
 		t.Fatal("wrong extinction scope")
 	}
@@ -184,7 +205,7 @@ func TestSingleExtinctionDoesNotStopSimulation(t *testing.T) {
 	if err := s.EndMonth(Simulation); err != nil {
 		t.Fatal(err)
 	}
-	if s.Calendar.Elapsed != 2 {
+	if s.Calendar.Elapsed != 3 {
 		t.Fatal("surviving simulation stopped")
 	}
 }

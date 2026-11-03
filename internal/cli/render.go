@@ -47,12 +47,24 @@ func renderMap(v game.View) string {
 
 func renderStatus(v game.View) string {
 	t := v.Self
+	g := game.GrowthFor(v)
+	p := game.ProductionFor(v, v.Calendar.Season())
+	growthCondition := g.Reason
+	if growthCondition == "" {
+		growthCondition = "当前可积累"
+	}
 	var b strings.Builder
 	fmt.Fprintf(&b, "%s | 行动点：%d/%d\n", v.Calendar, t.AP, game.MonthlyAP)
-	fmt.Fprintf(&b, "%s | 首都：(%d,%d) | 人口：%d | 士兵：%d | 平民：%d\n", t.Name, t.Capital.X, t.Capital.Y, t.Population, t.Soldiers, t.Population-t.Soldiers)
+	fmt.Fprintf(&b, "%s | 首都：(%d,%d) | 人口：%d/%d（承载力） | 士兵：%d | 平民：%d\n", t.Name, t.Capital.X, t.Capital.Y, t.Population, g.Capacity, t.Soldiers, t.Population-t.Soldiers)
 	fmt.Fprintf(&b, "粮食：%d（上月净变化 %+d） 木材：%d（上月净变化 %+d）\n", t.Food, t.LastChange.Food, t.Wood, t.LastChange.Wood)
 	territory, farms, building := counts(v)
 	fmt.Fprintf(&b, "领土：%d 格 | 完工农田：%d | 在建农田：%d\n", territory, farms, building)
+	fmt.Fprintf(&b, "增长进度：%d/%d | 安全存粮：%d | %s\n", t.GrowthProgress, game.GrowthMonths, g.Reserve, growthCondition)
+	fmt.Fprintf(&b, "连续缺粮：%d 月（从第 %d 月起减员） | 每月口粮：%d\n", t.HungerMonths, game.HungerGraceMonths+1, game.FoodDemand(t.Population, t.Soldiers))
+	fmt.Fprintf(&b, "人手可经营 %d 格 | 本月安排：农田 %d 格，森林 %d 格\n", p.Slots, len(p.Farms), len(p.Forests))
+	for _, point := range p.Unstaffed {
+		fmt.Fprintf(&b, "  (%d,%d) 人手不足，预计停产\n", point.X, point.Y)
+	}
 	for _, c := range v.Cells {
 		if c.Tile.Owner != t.ID {
 			continue
@@ -97,7 +109,7 @@ func renderSummary(s *game.State, requested, actual int) string {
 		}
 		v, _ := s.View(id) // id comes from the fixed tribe array, so it is always valid.
 		territory, farms, building := counts(v)
-		fmt.Fprintf(&b, "%s [%s] 人口 %d 士兵 %d 粮食 %d 木材 %d 领土 %d 农田 %d 在建 %d\n", t.Name, state, t.Population, t.Soldiers, t.Food, t.Wood, territory, farms, building)
+		fmt.Fprintf(&b, "%s [%s] 人口 %d/%d 士兵 %d 粮食 %d 木材 %d 领土 %d 农田 %d 在建 %d 增长 %d/%d 连续缺粮 %d 月\n", t.Name, state, t.Population, game.CarryingCapacity(v), t.Soldiers, t.Food, t.Wood, territory, farms, building, t.GrowthProgress, game.GrowthMonths, t.HungerMonths)
 	}
 	return b.String()
 }

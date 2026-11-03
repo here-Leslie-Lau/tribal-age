@@ -2,12 +2,25 @@ package game
 
 import "fmt"
 
-type aiEconomy struct{ farms, forests, bareGrass, required int }
+type aiEconomy struct {
+	farms, forests, bareGrass, required, slots int
+	needsLand                                  bool
+}
 
 func assessEconomy(v View) aiEconomy {
 	annualYield := MonthsPerSeason * (FarmYield(Spring) + FarmYield(Summer) + FarmYield(Autumn) + FarmYield(Winter))
-	need := FoodDemand(v.Self.Population, v.Self.Soldiers) * MonthsPerYear
-	e := aiEconomy{required: (need + annualYield - 1) / annualYield}
+	capacity := CarryingCapacity(v)
+	population := v.Self.Population
+	if population+GrowthPeople <= capacity {
+		population += GrowthPeople
+	}
+	need := FoodDemand(population, v.Self.Soldiers) * MonthsPerYear
+	slots := v.Self.WorkSlots()
+	e := aiEconomy{
+		required:  min(slots, (need+annualYield-1)/annualYield),
+		slots:     slots,
+		needsLand: v.Self.Population+GrowthPeople > capacity,
+	}
 	for _, c := range v.Cells {
 		if c.Tile.Owner != v.Self.ID {
 			continue
@@ -46,12 +59,7 @@ func ChooseAction(v View) (Action, bool) {
 func actionScore(a Action, tile Tile, wood int, e aiEconomy) int {
 	switch a.Kind {
 	case BuildFarm:
-		if e.farms == 0 {
-			return 100
-		}
-		if e.forests > 0 && e.farms < e.required {
-			return 70
-		}
+		return farmScore(e)
 	case Claim:
 		return claimScore(tile.Terrain, wood, e)
 	case Explore:
@@ -66,7 +74,23 @@ func actionScore(a Action, tile Tile, wood int, e aiEconomy) int {
 	return 0
 }
 
+func farmScore(e aiEconomy) int {
+	if e.required == 0 {
+		return 0
+	}
+	if e.farms == 0 {
+		return 100
+	}
+	if e.forests > 0 && e.farms < e.required {
+		return 70
+	}
+	return 0
+}
+
 func claimScore(terrain Terrain, wood int, e aiEconomy) int {
+	if e.slots == 0 {
+		return 0
+	}
 	if e.forests == 0 {
 		if terrain == Forest {
 			return 90
@@ -79,14 +103,22 @@ func claimScore(terrain Terrain, wood int, e aiEconomy) int {
 		}
 		return 0
 	}
+	return expansionScore(terrain, wood, e)
+}
+
+func expansionScore(terrain Terrain, wood int, e aiEconomy) int {
 	// Keep one farm's cost in reserve before optional expansion.
 	if wood < ClaimWood+FarmWood {
 		return 0
 	}
-	if terrain == Forest {
+	// Winter frees all workers for forestry, but more than this cannot add yield.
+	if terrain == Forest && e.forests < e.slots {
 		return 40
 	}
-	return 30
+	if e.needsLand {
+		return 30
+	}
+	return 0
 }
 
 func (s *State) runAI(id int) error {

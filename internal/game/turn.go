@@ -19,40 +19,14 @@ func (s *State) EndMonth(mode Mode) error {
 	if mode == Interactive && !s.Tribes[0].Alive() {
 		return fmt.Errorf("玩家部落已经灭亡")
 	}
-	first := 1
-	if mode == Simulation {
-		first = 0
-	}
-	for id := first; id < TribeCount; id++ {
-		if s.Tribes[id].Alive() {
-			if err := s.runAI(id); err != nil {
-				return err
-			}
-		}
+	if err := s.runMonthlyAI(mode); err != nil {
+		return err
 	}
 	s.advanceFarms()
 	s.produce()
-	var newlyExtinct []int
-	for id := range s.Tribes {
-		if s.Tribes[id].Alive() {
-			s.consume(id)
-			if !s.Tribes[id].Alive() {
-				newlyExtinct = append(newlyExtinct, id)
-			}
-		}
-	}
+	newlyExtinct := s.settlePopulation()
 	s.Calendar.Advance()
-	for _, id := range newlyExtinct {
-		s.clearExtinct(id)
-	}
-	for id := range s.Tribes {
-		if s.Tribes[id].Alive() {
-			s.Tribes[id].AP = MonthlyAP
-		}
-		t := &s.Tribes[id]
-		t.LastChange = Stock{t.Food - t.monthStart.Food, t.Wood - t.monthStart.Wood}
-		t.monthStart = Stock{t.Food, t.Wood}
-	}
+	s.finishMonth(newlyExtinct)
 	return nil
 }
 
@@ -74,27 +48,18 @@ func (s *State) advanceFarms() {
 }
 
 func (s *State) produce() {
-	var gains [TribeCount]Stock
-	for _, row := range s.Tiles {
-		for _, tile := range row {
-			if tile.Owner == Unowned {
-				continue
-			}
-			if tile.Farm == FarmReady {
-				gains[tile.Owner].Food += FarmYield(s.Calendar.Season())
-			}
-			if tile.Terrain == Forest {
-				gains[tile.Owner].Wood += ForestYield
-			}
-		}
-	}
-	for id, gain := range gains {
+	for id := range s.Tribes {
 		if !s.Tribes[id].Alive() {
 			continue
 		}
-		s.Tribes[id].Food += gain.Food
-		s.Tribes[id].Wood += gain.Wood
-		s.emitOwn(id, fmt.Sprintf("生产入库：粮食 +%d，木材 +%d。", gain.Food, gain.Wood))
+		v, _ := s.View(id) // id comes from the fixed tribe array.
+		p := ProductionFor(v, s.Calendar.Season())
+		s.Tribes[id].Food += p.Food
+		s.Tribes[id].Wood += p.Wood
+		s.emitOwn(id, fmt.Sprintf("生产入库：粮食 +%d，木材 +%d。", p.Food, p.Wood))
+		for _, point := range p.Unstaffed {
+			s.emitOwn(id, fmt.Sprintf("生产地块 (%d,%d) 人手不足，本月停产。", point.X, point.Y))
+		}
 	}
 }
 
@@ -105,19 +70,27 @@ func (s *State) consume(id int) {
 	t.Food -= paid
 	s.emitOwn(id, fmt.Sprintf("本月粮耗 %d，实际支付 %d。", demand, paid))
 	if paid == demand {
+		t.HungerMonths = 0
+		return
+	}
+	t.HungerMonths++
+	t.GrowthProgress = 0
+	if t.HungerMonths <= HungerGraceMonths {
+		s.emitOwn(id, fmt.Sprintf("饥荒宽限：缺粮 %d，连续缺粮 %d 月，本月不减员。", demand-paid, t.HungerMonths))
 		return
 	}
 	loss := min(t.Population, demand-paid)
 	oldSoldiers := t.Soldiers
 	t.Population -= loss
 	t.Soldiers = min(t.Soldiers, t.Population)
-	s.emitOwn(id, fmt.Sprintf("饥荒：缺粮 %d，人口减少 %d，士兵减少 %d。", demand-paid, loss, oldSoldiers-t.Soldiers))
+	s.emitOwn(id, fmt.Sprintf("饥荒：连续缺粮 %d 月，缺粮 %d，人口减少 %d，士兵减少 %d。", t.HungerMonths, demand-paid, loss, oldSoldiers-t.Soldiers))
 }
 
 func (s *State) clearExtinct(id int) {
 	t := &s.Tribes[id]
 	s.emitAt(id, t.Capital, fmt.Sprintf("%s灭亡，领土与项目已清理。", t.Name))
 	t.Food, t.Wood, t.Soldiers, t.AP = 0, 0, 0, 0
+	t.GrowthProgress, t.HungerMonths = 0, 0
 	for y := range s.Tiles {
 		for x := range s.Tiles[y] {
 			tile := &s.Tiles[y][x]
@@ -126,5 +99,52 @@ func (s *State) clearExtinct(id int) {
 				tile.Farm = FarmNone
 			}
 		}
+	}
+}
+
+func (s *State) runMonthlyAI(mode Mode) error {
+	first := 1
+	if mode == Simulation {
+		first = 0
+	}
+	for id := first; id < TribeCount; id++ {
+		if s.Tribes[id].Alive() {
+			if err := s.runAI(id); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func (s *State) settlePopulation() []int {
+	var newlyExtinct []int
+	for id := range s.Tribes {
+		if s.Tribes[id].Alive() {
+			s.consume(id)
+			if !s.Tribes[id].Alive() {
+				newlyExtinct = append(newlyExtinct, id)
+			}
+		}
+	}
+	for id := range s.Tribes {
+		if s.Tribes[id].Alive() {
+			s.grow(id)
+		}
+	}
+	return newlyExtinct
+}
+
+func (s *State) finishMonth(newlyExtinct []int) {
+	for _, id := range newlyExtinct {
+		s.clearExtinct(id)
+	}
+	for id := range s.Tribes {
+		if s.Tribes[id].Alive() {
+			s.Tribes[id].AP = MonthlyAP
+		}
+		t := &s.Tribes[id]
+		t.LastChange = Stock{t.Food - t.monthStart.Food, t.Wood - t.monthStart.Wood}
+		t.monthStart = Stock{t.Food, t.Wood}
 	}
 }

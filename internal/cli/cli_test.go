@@ -99,6 +99,8 @@ func TestPlayHidesUnknownWorldAndEnemyInventory(t *testing.T) {
 	b.Tribes[1].Explored[0][0] = true
 	b.Tribes[1].Food = 999
 	b.Tribes[1].Wood = 888
+	b.Tribes[1].Population = 55
+	b.Tribes[1].HungerMonths = 1
 	var first, second bytes.Buffer
 	if err := play(a, strings.NewReader("map\nstatus\nquit\n"), &first); err != nil {
 		t.Fatal(err)
@@ -119,10 +121,10 @@ func TestExtinctionStopsAtActualMonth(t *testing.T) {
 		s.Tribes[0].Food = 0
 		s.Tribes[0].Wood = 0
 		var out bytes.Buffer
-		if err := play(s, strings.NewReader("end\nend\n"), &out); err != nil {
+		if err := play(s, strings.NewReader("end\nend\nend\n"), &out); err != nil {
 			t.Fatal(err)
 		}
-		if s.Calendar.Elapsed != 1 || !strings.Contains(out.String(), "生存结束") {
+		if s.Calendar.Elapsed != 2 || !strings.Contains(out.String(), "生存结束") {
 			t.Fatal("dead player's game continued")
 		}
 		if err := s.Validate(); err != nil {
@@ -141,7 +143,7 @@ func TestExtinctionStopsAtActualMonth(t *testing.T) {
 		if err := simulate(s, 120, &out); err != nil {
 			t.Fatal(err)
 		}
-		if s.Calendar.Elapsed != 1 || !strings.Contains(out.String(), "实际推进 1 个月") || !strings.Contains(out.String(), "灭亡") {
+		if s.Calendar.Elapsed != 2 || !strings.Contains(out.String(), "实际推进 2 个月") || !strings.Contains(out.String(), "灭亡") {
 			t.Fatal("wrong early termination summary")
 		}
 	})

@@ -2,27 +2,34 @@ package game
 
 // Numeric game rules live here; the engine, AI and CLI share them.
 const (
-	MonthsPerYear     = 12
-	MonthsPerSeason   = 3
-	StartingMonth     = 3
-	Width             = 24
-	Height            = 16
-	TribeCount        = 3
-	MinSpawnDistance  = 6
-	InitialPopulation = 30
-	InitialSoldiers   = 5
-	InitialFood       = 60
-	InitialWood       = 20
-	MonthlyAP         = 2
-	ActionAP          = 1
-	ClaimWood         = 5
-	FarmWood          = 10
-	FarmMonths        = 3
-	TrainingFood      = 5
-	TrainingSize      = 5
-	ForestYield       = 2
-	RationGroup       = 5
-	Unowned           = -1
+	MonthsPerYear       = 12
+	MonthsPerSeason     = 3
+	StartingMonth       = 3
+	Width               = 24
+	Height              = 16
+	TribeCount          = 3
+	MinSpawnDistance    = 6
+	InitialPopulation   = 30
+	InitialSoldiers     = 5
+	InitialFood         = 60
+	InitialWood         = 20
+	MonthlyAP           = 2
+	ActionAP            = 1
+	ClaimWood           = 5
+	FarmWood            = 10
+	FarmMonths          = 3
+	TrainingFood        = 5
+	TrainingSize        = 5
+	ForestYield         = 2
+	RationGroup         = 5
+	WorkersPerPlot      = 5
+	CapitalCapacity     = 30
+	CapacityPerPlot     = 5
+	GrowthMonths        = 3
+	GrowthPeople        = 1
+	GrowthReserveMonths = 3
+	HungerGraceMonths   = 1
+	Unowned             = -1
 )
 
 func FarmYield(season Season) int {
