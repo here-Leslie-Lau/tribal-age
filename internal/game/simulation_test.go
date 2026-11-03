@@ -82,16 +82,25 @@ func FuzzActionInvariants(f *testing.F) {
 		growing = append(growing, 4, byte(Simulation), 0, 0)
 	}
 	f.Add(growing)
+	f.Add([]byte{6, 4, 0, 1, 4, byte(Simulation), 0, 0, 6, 0, 0, 1, 4, byte(Simulation), 0, 0})
 	f.Fuzz(func(t *testing.T, data []byte) {
 		s := New(42)
 		for i := 0; i+3 < min(len(data), 512); i += 4 {
 			before := *s
 			before.Events = append([]Event(nil), s.Events...)
 			var err error
-			if data[i]%6 == 4 {
+			kind := data[i] % 7
+			switch kind {
+			case 4:
 				err = s.EndMonth(Mode(data[i+1] % 3))
-			} else {
-				a := Action{Kind: ActionKind(data[i] % 6), Target: Point{int(int8(data[i+1])), int(int8(data[i+2]))}}
+			case 6:
+				priority := int(int8(data[i+1]))
+				if data[i+2]&1 != 0 {
+					priority = int(data[i+1]) * 2
+				}
+				err = s.SetForestPriority(int(data[i+3]%5)-1, priority)
+			default:
+				a := Action{Kind: ActionKind(kind), Target: Point{int(int8(data[i+1])), int(int8(data[i+2]))}}
 				err = s.Apply(int(data[i+3]%5)-1, a)
 			}
 			if err != nil && !reflect.DeepEqual(before, *s) {

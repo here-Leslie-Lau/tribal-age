@@ -101,6 +101,7 @@ func TestPlayHidesUnknownWorldAndEnemyInventory(t *testing.T) {
 	b.Tribes[1].Wood = 888
 	b.Tribes[1].Population = 55
 	b.Tribes[1].HungerMonths = 1
+	b.Tribes[1].ForestPriority = 4
 	var first, second bytes.Buffer
 	if err := play(a, strings.NewReader("map\nstatus\nquit\n"), &first); err != nil {
 		t.Fatal(err)

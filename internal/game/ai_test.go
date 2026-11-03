@@ -26,6 +26,7 @@ func TestViewAndAIDoNotSeeHiddenInformation(t *testing.T) {
 	s.Tribes[1].Wood = 888
 	s.Tribes[1].Population = 55
 	s.Tribes[1].GrowthProgress = 2
+	s.Tribes[1].ForestPriority = 4
 	other, err := s.View(0)
 	if err != nil {
 		t.Fatal(err)

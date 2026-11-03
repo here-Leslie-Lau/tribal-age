@@ -10,18 +10,7 @@ import (
 )
 
 func TestStatusExplainsPopulationAndLabor(t *testing.T) {
-	s := game.New(42)
-	p := s.Tribes[0].Capital
-	s.Tribes[0].Food = 100
-	s.Tribes[0].GrowthProgress = 2
-	for _, q := range []game.Point{p, {X: p.X + 1, Y: p.Y}} {
-		s.Tiles[q.Y][q.X] = game.Tile{Terrain: game.Grassland, Owner: 0, Farm: game.FarmReady}
-		s.Tribes[0].Explored[q.Y][q.X] = true
-	}
-	for _, q := range []game.Point{{X: p.X, Y: p.Y - 1}, {X: p.X + 1, Y: p.Y - 1}, {X: p.X - 1, Y: p.Y}, {X: p.X - 1, Y: p.Y - 1}} {
-		s.Tiles[q.Y][q.X] = game.Tile{Terrain: game.Forest, Owner: 0}
-		s.Tribes[0].Explored[q.Y][q.X] = true
-	}
+	s := cliProductionScenario()
 	var out bytes.Buffer
 	if err := play(s, strings.NewReader("status\nquit\n"), &out); err != nil {
 		t.Fatal(err)

@@ -24,7 +24,8 @@ func ProductionFor(v View, season Season) Production {
 		return p
 	}
 	farms, forests := productionCandidates(v, season)
-	farmCount := min(p.Slots, len(farms))
+	reservedForests := min(v.Self.ForestPriority, p.Slots, len(forests))
+	farmCount := min(p.Slots-reservedForests, len(farms))
 	forestCount := min(p.Slots-farmCount, len(forests))
 	p.Farms, p.Forests = farms[:farmCount], forests[:forestCount]
 	p.Unstaffed = append(p.Unstaffed, farms[farmCount:]...)

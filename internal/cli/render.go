@@ -47,11 +47,13 @@ func renderMap(v game.View) string {
 
 func renderStatus(v game.View) string {
 	t := v.Self
-	g := game.GrowthFor(v)
-	p := game.ProductionFor(v, v.Calendar.Season())
+	f := game.ForecastFor(v)
+	g, p := f.Growth, f.Production
 	growthCondition := g.Reason
 	if growthCondition == "" {
-		growthCondition = "当前可积累"
+		growthCondition = "预计可积累增长进度"
+	} else {
+		growthCondition = "预计增长暂停：" + growthCondition
 	}
 	var b strings.Builder
 	fmt.Fprintf(&b, "%s | 行动点：%d/%d\n", v.Calendar, t.AP, game.MonthlyAP)
@@ -61,7 +63,8 @@ func renderStatus(v game.View) string {
 	fmt.Fprintf(&b, "领土：%d 格 | 完工农田：%d | 在建农田：%d\n", territory, farms, building)
 	fmt.Fprintf(&b, "增长进度：%d/%d | 安全存粮：%d | %s\n", t.GrowthProgress, game.GrowthMonths, g.Reserve, growthCondition)
 	fmt.Fprintf(&b, "连续缺粮：%d 月（从第 %d 月起减员） | 每月口粮：%d\n", t.HungerMonths, game.HungerGraceMonths+1, game.FoodDemand(t.Population, t.Soldiers))
-	fmt.Fprintf(&b, "人手可经营 %d 格 | 本月安排：农田 %d 格，森林 %d 格\n", p.Slots, len(p.Farms), len(p.Forests))
+	b.WriteString(renderProduction(t, f))
+	fmt.Fprintf(&b, "人手可经营 %d 格 | 月末预计安排：农田 %d 格，森林 %d 格\n", p.Slots, len(p.Farms), len(p.Forests))
 	for _, point := range p.Unstaffed {
 		fmt.Fprintf(&b, "  (%d,%d) 人手不足，预计停产\n", point.X, point.Y)
 	}
@@ -70,6 +73,23 @@ func renderStatus(v game.View) string {
 			continue
 		}
 		fmt.Fprintf(&b, "  (%d,%d) %s / 我方领土 / 农田：%s\n", c.Point.X, c.Point.Y, c.Tile.Terrain, farmLabel(c.Tile.Farm))
+	}
+	return b.String()
+}
+
+func renderProduction(t game.Tribe, f game.Forecast) string {
+	var b strings.Builder
+	if t.ForestPriority == 0 {
+		b.WriteString("生产安排：自动（先种田，再采木）\n")
+	} else {
+		fmt.Fprintf(&b, "优先采木：%d 格森林（剩余人手自动安排）\n", t.ForestPriority)
+		if len(f.Production.Forests) < t.ForestPriority {
+			fmt.Fprintf(&b, "采木目标暂未满足：实际经营 %d 格，森林或人手不足。\n", len(f.Production.Forests))
+		}
+	}
+	fmt.Fprintf(&b, "本月预计产粮 %d，产木 %d；口粮 %d，粮食收支 %+d，预计结余 %d。\n", f.Production.Food, f.Production.Wood, f.Demand, f.NetFood, f.FoodAfter)
+	if f.Shortage > 0 {
+		fmt.Fprintf(&b, "缺粮预警：预计缺 %d 粮，将中断增长并计入连续缺粮；仍需 end 才结算。\n", f.Shortage)
 	}
 	return b.String()
 }

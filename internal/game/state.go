@@ -44,6 +44,13 @@ func (f FarmStage) Progress() int {
 	return int(f) - 1
 }
 
+func (f FarmStage) advance() FarmStage {
+	if f == FarmNone || f == FarmReady {
+		return f
+	}
+	return f + 1
+}
+
 type Tile struct {
 	Terrain Terrain
 	Owner   int
@@ -63,6 +70,7 @@ type Tribe struct {
 	AP             int
 	GrowthProgress int
 	HungerMonths   int
+	ForestPriority int // Minimum forests staffed before the usual farm-first allocation.
 	Explored       [Height][Width]bool
 	LastChange     Stock
 	monthStart     Stock
@@ -128,6 +136,9 @@ func (s *State) Validate() error {
 
 func (s *State) validateTribe(id int, t Tribe) error {
 	if err := validatePopulationRecords(t); err != nil {
+		return err
+	}
+	if err := validateWorkPlan(t); err != nil {
 		return err
 	}
 	if t.ID != id || !t.Capital.Valid() {

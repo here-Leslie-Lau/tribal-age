@@ -34,10 +34,11 @@ func (s *State) advanceFarms() {
 	for y := range s.Tiles {
 		for x := range s.Tiles[y] {
 			tile := &s.Tiles[y][x]
-			if tile.Farm == FarmNone || tile.Farm == FarmReady {
+			next := tile.Farm.advance()
+			if next == tile.Farm {
 				continue
 			}
-			tile.Farm++
+			tile.Farm = next
 			message := fmt.Sprintf("农田 (%d,%d) 推进至 %d/%d。", x, y, tile.Farm.Progress(), FarmMonths)
 			if tile.Farm == FarmReady {
 				message = fmt.Sprintf("农田 (%d,%d) 已完工（%d/%d）。", x, y, FarmMonths, FarmMonths)
@@ -91,6 +92,7 @@ func (s *State) clearExtinct(id int) {
 	s.emitAt(id, t.Capital, fmt.Sprintf("%s灭亡，领土与项目已清理。", t.Name))
 	t.Food, t.Wood, t.Soldiers, t.AP = 0, 0, 0, 0
 	t.GrowthProgress, t.HungerMonths = 0, 0
+	t.ForestPriority = 0
 	for y := range s.Tiles {
 		for x := range s.Tiles[y] {
 			tile := &s.Tiles[y][x]

@@ -96,6 +96,10 @@ func execute(s *game.State, c command) (string, error) {
 	from := len(s.Events)
 	switch c.name {
 	case "map", "status":
+	case "work":
+		if err := s.SetForestPriority(0, c.forests); err != nil {
+			return "", err
+		}
 	case "end":
 		if err := s.EndMonth(game.Interactive); err != nil {
 			return "", err
