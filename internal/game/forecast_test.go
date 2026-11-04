@@ -37,7 +37,7 @@ func TestForecastShowsFoodWoodAndGrowthTradeoff(t *testing.T) {
 			if err := s.EndMonth(Interactive); err != nil {
 				t.Fatal(err)
 			}
-			if s.Tribes[0].Food != f.FoodAfter || s.Tribes[0].Wood != 20+f.Production.Wood || (s.Tribes[0].GrowthProgress == 1) != tt.canGrow {
+			if s.Tribes[0].Food != f.FoodAfter || s.Tribes[0].Wood != 20+f.Production.Wood || s.Tribes[0].GrowthProgress != f.Growth.Progress || s.Tribes[0].Population != 31+f.Growth.Added {
 				t.Fatalf("preview differs from settlement: preview %+v, actual %+v", f, s.Tribes[0])
 			}
 		})
@@ -65,7 +65,7 @@ func TestForecastIncludesCompletingFarmsWithoutMutation(t *testing.T) {
 	if err := s.EndMonth(Interactive); err != nil {
 		t.Fatal(err)
 	}
-	if s.Tribes[0].Food != f.FoodAfter || s.Tribes[0].GrowthProgress != 1 {
+	if s.Tribes[0].Food != f.FoodAfter || s.Tribes[0].GrowthProgress != 375 || f.Growth.Progress != 375 {
 		t.Fatal("completion preview differed from settlement")
 	}
 	if s.rng.Int63() != growthScenario().rng.Int63() {

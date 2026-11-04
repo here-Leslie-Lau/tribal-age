@@ -15,7 +15,7 @@ func TestStatusExplainsPopulationAndLabor(t *testing.T) {
 	if err := play(s, strings.NewReader("status\nquit\n"), &out); err != nil {
 		t.Fatal(err)
 	}
-	for _, text := range []string{"人口：30/55", "增长进度：2/3", "安全存粮：24", "可经营 5 格", "农田 2 格", "森林 3 格", "人手不足"} {
+	for _, text := range []string{"人口：30/55", "增长进度：2/1000", "本月预计+450/1000", "安全存粮：24", "可经营 5 格", "农田 2 格", "森林 3 格", "人手不足"} {
 		if !strings.Contains(out.String(), text) {
 			t.Fatalf("missing population feedback %q: %s", text, out.String())
 		}
@@ -32,9 +32,9 @@ func TestGrowthAndGraceFeedbackThroughCommands(t *testing.T) {
 			t.Fatal(err)
 		}
 		if s.Tribes[0].Population != 31 || s.Calendar.Elapsed != 4 {
-			t.Fatal("expansion did not enable three qualifying months of growth")
+			t.Fatal("expansion did not enable nonlinear fractional growth")
 		}
-		for _, text := range []string{"承载力已满", "增长进度：1/3", "增长进度：2/3", "人口自然增长"} {
+		for _, text := range []string{"承载力已满", "增长进度：375/1000", "增长进度：750/1000", "人口自然增长"} {
 			if !strings.Contains(out.String(), text) {
 				t.Fatalf("missing feedback %q", text)
 			}

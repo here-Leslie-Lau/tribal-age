@@ -68,7 +68,7 @@ type Tribe struct {
 	Food           int
 	Wood           int
 	AP             int
-	GrowthProgress int
+	GrowthProgress int // Fractional person in GrowthScale units; not a month counter.
 	HungerMonths   int
 	ForestPriority int // Minimum forests staffed before the usual farm-first allocation.
 	Explored       [Height][Width]bool

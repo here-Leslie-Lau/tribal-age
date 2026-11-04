@@ -19,7 +19,7 @@ func (m *model) sidebarGroups(v game.View, f game.Forecast, l layout) [][]string
 	if t.ForestPriority > 0 {
 		policy = fmt.Sprintf("生产：优先采木%d格", t.ForestPriority)
 	}
-	growth := "增长：本月可积累"
+	growth := fmt.Sprintf("增长：+%d/%d 预计+%d人", f.Growth.Rate, game.GrowthScale, f.Growth.Added)
 	if f.Growth.Reason != "" {
 		growth = "增长：" + f.Growth.Reason
 	}
@@ -38,7 +38,7 @@ func (m *model) sidebarGroups(v game.View, f game.Forecast, l layout) [][]string
 		{fmt.Sprintf("粮食：%d (上月%+d)", t.Food, t.LastChange.Food), fmt.Sprintf("收支 %+d / 余粮 %d", f.NetFood, f.FoodAfter),
 			fmt.Sprintf("木材：%d (上月%+d)", t.Wood, t.LastChange.Wood), fmt.Sprintf("本月预计 %+d", p.Wood)},
 		{fmt.Sprintf("人手%d格：田%d 林%d", p.Slots, len(p.Farms), len(p.Forests)), policy,
-			fmt.Sprintf("增长%d/%d / 安全粮%d", t.GrowthProgress, game.GrowthMonths, f.Growth.Reserve), hunger, growth},
+			fmt.Sprintf("增长%d/%d / 安全粮%d", t.GrowthProgress, game.GrowthScale, f.Growth.Reserve), hunger, growth},
 	}
 }
 

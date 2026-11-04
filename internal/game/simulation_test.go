@@ -10,6 +10,7 @@ func TestLongSimulationAndActionReplay(t *testing.T) {
 	for _, seed := range seeds {
 		stepped, automatic := New(seed), New(seed)
 		for month := 0; month < 120; month++ {
+			beforePopulation := automatic.Tribes
 			// Exercise the public action API individually, checking every transition.
 			for id := range stepped.Tribes {
 				for action := 0; action < MonthlyAP; action++ {
@@ -53,8 +54,10 @@ func TestLongSimulationAndActionReplay(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
-				if v.Self.Population > InitialPopulation+(month+1)/GrowthMonths*GrowthPeople {
-					t.Fatal("population grew faster than the three-month rule")
+				before := beforePopulation[id]
+				maxBirths := (before.GrowthProgress + growthRate(before.Population, CarryingCapacity(v))) / GrowthScale
+				if v.Self.Population > before.Population+maxBirths {
+					t.Fatal("population exceeded this month's nonlinear growth bound")
 				}
 				if v.Self.Alive() && v.Self.Population > CarryingCapacity(v) {
 					t.Fatal("new population exceeded territory capacity")

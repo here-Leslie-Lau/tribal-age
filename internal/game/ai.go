@@ -10,16 +10,13 @@ type aiEconomy struct {
 func assessEconomy(v View) aiEconomy {
 	annualYield := MonthsPerSeason * (FarmYield(Spring) + FarmYield(Summer) + FarmYield(Autumn) + FarmYield(Winter))
 	capacity := CarryingCapacity(v)
-	population := v.Self.Population
-	if population+GrowthPeople <= capacity {
-		population += GrowthPeople
-	}
+	population := projectedPopulation(v, GrowthPlanningMonths)
 	need := FoodDemand(population, v.Self.Soldiers) * MonthsPerYear
 	slots := v.Self.WorkSlots()
 	e := aiEconomy{
 		required:  min(slots, (need+annualYield-1)/annualYield),
 		slots:     slots,
-		needsLand: v.Self.Population+GrowthPeople > capacity,
+		needsLand: (capacity-population)*GrowthSpaceRate < population*GrowthPopulationRate,
 	}
 	for _, c := range v.Cells {
 		if c.Tile.Owner != v.Self.ID {
@@ -36,6 +33,19 @@ func assessEconomy(v View) aiEconomy {
 		}
 	}
 	return e
+}
+
+// Plan potential births over construction plus reserve time, not just P+1.
+// Ignore food eligibility here so today's low stores cannot prevent food planning.
+func projectedPopulation(v View, months int) int {
+	population, progress := v.Self.Population, v.Self.GrowthProgress
+	capacity := CarryingCapacity(v)
+	for month := 0; month < months; month++ {
+		total := progress + growthRate(population, capacity)
+		population += min(total/GrowthScale, max(0, capacity-population))
+		progress = total % GrowthScale
+	}
+	return population
 }
 
 // ChooseAction is pure: its only input is the tribe's information-limited view.

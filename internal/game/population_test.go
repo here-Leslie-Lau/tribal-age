@@ -17,7 +17,7 @@ func growthScenario() *State {
 
 func TestPopulationGrowthHandExample(t *testing.T) {
 	s := growthScenario()
-	for i, want := range []struct{ food, population, progress int }{{24, 30, 1}, {25, 30, 2}, {26, 31, 0}, {30, 31, 1}} {
+	for i, want := range []struct{ food, population, progress int }{{24, 30, 375}, {25, 30, 750}, {26, 31, 125}, {30, 31, 425}} {
 		if err := s.EndMonth(Interactive); err != nil {
 			t.Fatal(err)
 		}
@@ -87,7 +87,7 @@ func TestCarryingCapacityAndGrowthThresholds(t *testing.T) {
 	}
 }
 
-func TestGrowthProgressResetsWhenFoodOrLandIsInsufficient(t *testing.T) {
+func TestLowReservePausesGrowthAndLandClearsProgress(t *testing.T) {
 	t.Run("training spends reserve", func(t *testing.T) {
 		s := growthScenario()
 		if err := s.EndMonth(Interactive); err != nil {
@@ -96,13 +96,13 @@ func TestGrowthProgressResetsWhenFoodOrLandIsInsufficient(t *testing.T) {
 		if err := s.Apply(0, Action{Kind: Train}); err != nil {
 			t.Fatal(err)
 		}
-		if s.Tribes[0].GrowthProgress != 1 {
+		if s.Tribes[0].GrowthProgress != 375 {
 			t.Fatal("an action advanced or reset the monthly counter")
 		}
 		if err := s.EndMonth(Interactive); err != nil {
 			t.Fatal(err)
 		}
-		if s.Tribes[0].GrowthProgress != 0 || s.Tribes[0].Population != 30 || s.Tribes[0].HungerMonths != 0 {
+		if s.Tribes[0].GrowthProgress != 375 || s.Tribes[0].Population != 30 || s.Tribes[0].HungerMonths != 0 {
 			t.Fatal("low reserves did not stop growth independently of starvation")
 		}
 	})
@@ -173,7 +173,7 @@ func TestWinterGrowthAndNextMonthWorkers(t *testing.T) {
 		s.Calendar.Elapsed = 2
 		s.Tribes[0].Population = 34
 		s.Tribes[0].Food = 100
-		s.Tribes[0].GrowthProgress = 2
+		s.Tribes[0].GrowthProgress = 900
 		for _, p := range []Point{{2, 3}, {3, 3}, {4, 3}, {2, 2}, {3, 2}, {4, 2}} {
 			ownTile(s, 0, p, Grassland, FarmReady)
 		}
@@ -194,7 +194,7 @@ func TestWinterGrowthAndNextMonthWorkers(t *testing.T) {
 
 func TestPopulationRecordsValidateAndClearOnExtinction(t *testing.T) {
 	for _, change := range []func(*State){
-		func(s *State) { s.Tribes[0].GrowthProgress = -1 }, func(s *State) { s.Tribes[0].GrowthProgress = 3 },
+		func(s *State) { s.Tribes[0].GrowthProgress = -1 }, func(s *State) { s.Tribes[0].GrowthProgress = GrowthScale },
 		func(s *State) { s.Tribes[0].HungerMonths = -1 }, func(s *State) { s.Tribes[0].GrowthProgress = 1; s.Tribes[0].HungerMonths = 1 },
 	} {
 		s := scenarioState()
