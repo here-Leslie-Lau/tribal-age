@@ -19,8 +19,7 @@ func (m *model) confirm(key string) tea.Cmd {
 	case quitDialog:
 		return tea.Quit
 	case endDialog:
-		from := len(m.state.Events)
-		m.record(from, m.state.EndMonth(game.Interactive))
+		m.endMonth()
 	case trainingDialog:
 		m.apply(game.Train)
 	}

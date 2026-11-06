@@ -161,6 +161,7 @@ type brokenWriter struct{}
 func (brokenWriter) Write([]byte) (int, error) { return 0, errIO }
 
 func TestIOErrorsAreReturned(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
 	if err := Run([]string{"play"}, brokenReader{}, io.Discard); !errors.Is(err, errIO) {
 		t.Fatalf("lost read error: %v", err)
 	}

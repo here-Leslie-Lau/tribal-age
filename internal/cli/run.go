@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"tribal-age/internal/game"
-	"tribal-age/internal/tui"
+	"tribal-age/internal/savegame"
 )
 
 const usage = "用法：\n  tribal-age play --seed 42          方向键界面\n  tribal-age play --cli --seed 42    原逐行命令\n  tribal-age simulate --seed 42 --months 120\n"
@@ -22,14 +22,10 @@ func Run(args []string, input io.Reader, output io.Writer) error {
 	if err != nil {
 		return err
 	}
-	s := game.New(o.seed)
 	if o.mode == "play" {
-		if o.lineMode || !tui.CanRun(input, output) {
-			return play(s, input, output)
-		}
-		return tui.Run(s, input, output)
+		return runPlay(o, input, output)
 	}
-	return simulate(s, o.months, output)
+	return simulate(game.New(o.seed), o.months, output)
 }
 
 type options struct {
@@ -70,6 +66,10 @@ func parseOptions(args []string) (options, error) {
 }
 
 func play(s *game.State, input io.Reader, output io.Writer) error {
+	return playScanner(s, bufio.NewScanner(input), output, nil)
+}
+
+func playScanner(s *game.State, scanner *bufio.Scanner, output io.Writer, save func(*game.State) error) error {
 	v, err := s.View(0)
 	if err != nil {
 		return err
@@ -80,7 +80,6 @@ func play(s *game.State, input io.Reader, output io.Writer) error {
 	if !s.Tribes[0].Alive() {
 		return writeText(output, "生存结束。\n")
 	}
-	scanner := bufio.NewScanner(input)
 	for {
 		if err := writeText(output, "> "); err != nil {
 			return err
@@ -97,7 +96,7 @@ func play(s *game.State, input io.Reader, output io.Writer) error {
 		}
 		var text string
 		if err == nil {
-			text, err = execute(s, c)
+			text, err = executeSaved(s, c, save)
 		}
 		if err != nil {
 			text = "错误：" + err.Error() + "\n"
@@ -112,6 +111,10 @@ func play(s *game.State, input io.Reader, output io.Writer) error {
 }
 
 func execute(s *game.State, c command) (string, error) {
+	return executeSaved(s, c, nil)
+}
+
+func executeSaved(s *game.State, c command, save func(*game.State) error) (string, error) {
 	if c.name == "" {
 		return "", nil
 	}
@@ -126,7 +129,7 @@ func execute(s *game.State, c command) (string, error) {
 			return "", err
 		}
 	case "end":
-		if err := s.EndMonth(game.Interactive); err != nil {
+		if err := savegame.EndMonth(s, save); err != nil {
 			return "", err
 		}
 	default:

@@ -43,6 +43,9 @@ func (m *model) screen() string {
 	if !m.fits() {
 		return m.smallScreen()
 	}
+	if m.startup != nil {
+		return m.startupScreen()
+	}
 	if m.dialog == territoryDialog {
 		return m.territoryScreen()
 	}
@@ -79,14 +82,14 @@ func (m *model) screen() string {
 		lines = append(lines, "")
 	}
 	lines = append(lines, "方向键/WASD移动 | E探索 C占领 B建田 | T训练 P生产 L领地 M军队",
-		"Enter结束本月(需Y确认) | V切换视图 ?帮助 | Q退出(无存档)")
+		"Enter月结(需Y) | V切换 ?帮助 Q退出 | "+m.saveHint())
 	return l.frame(lines)
 }
 
 func (m *model) smallScreen() string {
-	lines := []string{fmt.Sprintf("终端太小：当前%d列%d行", m.width, m.height), "请放大到至少80列24行；游戏已暂停操作。", "Q退出（无存档）；放大窗口后继续。"}
+	lines := []string{fmt.Sprintf("终端太小：当前%d列%d行", m.width, m.height), "请放大到至少80列24行；游戏已暂停操作。", "Q退出；放大窗口后继续。"}
 	if m.dialog == quitDialog {
-		lines = []string{"退出游戏？尚不支持存档。", "[Y]确认退出 [N/Esc/Enter]取消"}
+		lines = []string{"退出？本月未结算操作不会保存。", m.saveHint(), "[Y]确认退出 [N/Esc/Enter]取消"}
 	}
 	return fitScreen(lines, min(m.width, 160), min(m.height, 48))
 }

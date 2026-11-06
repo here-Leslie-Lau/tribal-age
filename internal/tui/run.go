@@ -7,6 +7,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"github.com/charmbracelet/x/term"
 	"tribal-age/internal/game"
+	"tribal-age/internal/savegame"
 )
 
 // CanRun prevents raw/full-screen control sequences from reaching redirected IO.
@@ -26,7 +27,22 @@ func Run(s *game.State, input io.Reader, output io.Writer) error {
 	if err := s.Validate(); err != nil {
 		return fmt.Errorf("无法启动界面：%w", err)
 	}
-	p := tea.NewProgram(newModel(s), tea.WithInput(input), tea.WithOutput(output))
+	return runModel(newModel(s), input, output)
+}
+
+func RunSaved(seed int64, store *savegame.Store, input io.Reader, output io.Writer) error {
+	if input == nil || output == nil {
+		return fmt.Errorf("终端输入输出为空")
+	}
+	m, err := newSavedModel(seed, store)
+	if err != nil {
+		return err
+	}
+	return runModel(m, input, output)
+}
+
+func runModel(m *model, input io.Reader, output io.Writer) error {
+	p := tea.NewProgram(m, tea.WithInput(input), tea.WithOutput(output))
 	if _, err := p.Run(); err != nil {
 		return fmt.Errorf("终端界面运行失败：%w", err)
 	}

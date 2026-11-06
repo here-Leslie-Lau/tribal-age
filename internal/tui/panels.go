@@ -14,7 +14,7 @@ func (m *model) panelLines(v game.View, f game.Forecast, width, rows int) []stri
 		return []string{"确认结束本月？", fmt.Sprintf("还剩%d行动点；电脑随后行动，并结算本月生产、粮耗和人口。", v.Self.AP),
 			fmt.Sprintf("按当前局势：收支%+d，余粮%d，缺粮%d；未计军令结果。", f.NetFood, f.FoodAfter, f.Shortage), confirmHint}
 	case quitDialog:
-		return []string{"确认退出游戏？", "尚不支持存档，退出或关闭终端后，本局进度会丢失。", confirmHint}
+		return []string{"确认退出游戏？", "只保留上次月末存档，本月未结算操作和军令会丢失。", m.saveHint(), confirmHint}
 	case trainingDialog:
 		return []string{"训练士兵？", fmt.Sprintf("%d名平民转为士兵，总人口不变；花费%d粮、%d行动点。", game.TrainingSize, game.TrainingFood, game.ActionAP),
 			"士兵不生产，还会增加口粮需求；实际条件由引擎检查。", confirmHint}

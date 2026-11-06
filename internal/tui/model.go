@@ -54,10 +54,14 @@ type model struct {
 	mapView        mapStyle
 	plainMap       bool
 	messages       []string
+	startup        *startupMenu
+	save           func(*game.State) error
+	savedMonth     int
+	saveFailed     bool
 }
 
 func newModel(s *game.State) *model {
-	return &model{state: s, cursor: s.Tribes[0].Capital, width: minWidth, height: minHeight,
+	return &model{state: s, cursor: s.Tribes[0].Capital, width: minWidth, height: minHeight, savedMonth: -1,
 		plainMap: os.Getenv("NO_COLOR") != "" || os.Getenv("TERM") == "dumb",
 		messages: []string{"方向键选地块；光标和菜单不花行动点，只有确认结束月份才推进。"}}
 }
@@ -82,6 +86,9 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m *model) fits() bool { return m.width >= minWidth && m.height >= minHeight }
 
 func (m *model) handleKey(key string) tea.Cmd {
+	if m.startup != nil {
+		return m.startupKey(key)
+	}
 	if key == "q" || key == "ctrl+c" {
 		m.dialog = quitDialog
 		return nil

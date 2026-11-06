@@ -7,6 +7,7 @@ import (
 )
 
 func TestExplicitCLIAndRedirectedInputKeepOldCommands(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
 	for _, args := range [][]string{{"play", "--cli", "--seed", "42"}, {"play", "--seed", "42"}} {
 		var out bytes.Buffer
 		if err := Run(args, strings.NewReader("status\nquit\n"), &out); err != nil {
