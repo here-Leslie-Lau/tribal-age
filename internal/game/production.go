@@ -37,7 +37,7 @@ func ProductionFor(v View, season Season) Production {
 
 func productionCandidates(v View, season Season) (farms, forests []Point) {
 	for _, c := range v.Cells {
-		if c.Tile.Owner != v.Self.ID {
+		if c.Tile.Owner != v.Self.ID || c.Tile.Resting(v.Calendar.Elapsed) || v.BlockedProduction(c.Point) {
 			continue
 		}
 		if c.Tile.Farm == FarmReady && FarmYield(season) > 0 {

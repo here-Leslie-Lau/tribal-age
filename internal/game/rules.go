@@ -34,6 +34,20 @@ const (
 	Unowned              = -1
 )
 
+const (
+	MaxArmies              = 3
+	MaxArmyPeople          = Width*Height*CapacityPerPlot + TribeCount*CapitalCapacity
+	BattleDamagePercent    = 30
+	ForestDefensePercent   = 150
+	SupplyNormalPercent    = 100
+	SupplyStrainedPercent  = 75
+	SupplyCutPercent       = 50
+	SupplyNormalRange      = 1
+	SupplyStrainedRange    = 3
+	SupplyGraceMonths      = 1
+	SupplyAttritionPercent = 10
+)
+
 func FarmYield(season Season) int {
 	switch season {
 	case Spring:

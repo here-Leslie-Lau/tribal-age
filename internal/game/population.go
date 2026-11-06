@@ -6,10 +6,10 @@ func CarryingCapacity(v View) int {
 	if !v.Self.Alive() {
 		return 0
 	}
-	capacity := CapitalCapacity
+	capacity := 0
 	for _, c := range v.Cells {
-		if c.Tile.Owner == v.Self.ID && c.Point != v.Self.Capital {
-			capacity += CapacityPerPlot
+		if c.Tile.Owner == v.Self.ID {
+			capacity += c.Tile.Capacity()
 		}
 	}
 	return capacity

@@ -15,7 +15,7 @@ func cliProductionScenario() *game.State {
 	s.Tribes[0].Food = 100
 	s.Tribes[0].GrowthProgress = 2
 	for _, q := range []game.Point{p, {X: p.X + 1, Y: p.Y}} {
-		s.Tiles[q.Y][q.X] = game.Tile{Terrain: game.Grassland, Owner: 0, Farm: game.FarmReady}
+		s.Tiles[q.Y][q.X] = game.Tile{Terrain: game.Grassland, Owner: 0, Farm: game.FarmReady, Settlement: q == p}
 		s.Tribes[0].Explored[q.Y][q.X] = true
 	}
 	for _, q := range []game.Point{{X: p.X, Y: p.Y - 1}, {X: p.X + 1, Y: p.Y - 1}, {X: p.X - 1, Y: p.Y}, {X: p.X - 1, Y: p.Y - 1}} {

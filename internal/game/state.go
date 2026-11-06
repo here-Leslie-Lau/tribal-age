@@ -52,9 +52,11 @@ func (f FarmStage) advance() FarmStage {
 }
 
 type Tile struct {
-	Terrain Terrain
-	Owner   int
-	Farm    FarmStage
+	Terrain    Terrain
+	Owner      int
+	Farm       FarmStage
+	Settlement bool // Physical founding settlement; it does not move with the capital.
+	RestUntil  int  // Captured facilities resume when the calendar reaches this month.
 }
 
 type Stock struct{ Food, Wood int }
@@ -71,12 +73,24 @@ type Tribe struct {
 	GrowthProgress int // Fractional person in GrowthScale units; not a month counter.
 	HungerMonths   int
 	ForestPriority int // Minimum forests staffed before the usual farm-first allocation.
+	Armies         [MaxArmies]Army
+	Defeated       bool // Military defeat retains the surviving population; it is not a death toll.
 	Explored       [Height][Width]bool
 	LastChange     Stock
 	monthStart     Stock
 }
 
-func (t Tribe) Alive() bool { return t.Population > 0 }
+func (t Tribe) Alive() bool { return t.Population > 0 && !t.Defeated }
+
+func (t Tribe) Status() string {
+	if t.Defeated {
+		return "战败"
+	}
+	if t.Population == 0 {
+		return "灭亡"
+	}
+	return "存活"
+}
 
 func newTribe(id int, capital Point) Tribe {
 	t := Tribe{
@@ -141,6 +155,9 @@ func (s *State) validateTribe(id int, t Tribe) error {
 	if err := validateWorkPlan(t); err != nil {
 		return err
 	}
+	if err := s.validateArmies(id); err != nil {
+		return err
+	}
 	if t.ID != id || !t.Capital.Valid() {
 		return fmt.Errorf("部落身份或首都无效: %d", id)
 	}
@@ -151,7 +168,7 @@ func (s *State) validateTribe(id int, t Tribe) error {
 		return fmt.Errorf("部落%d资源或行动点无效", id+1)
 	}
 	if !t.Alive() {
-		if t.Food != 0 || t.Wood != 0 || t.AP != 0 {
+		if t.Food != 0 || t.Wood != 0 || t.AP != 0 || t.Soldiers != 0 {
 			return fmt.Errorf("灭亡部落未清理")
 		}
 		return nil
@@ -168,6 +185,9 @@ func (s *State) validateTile(p Point, tile Tile) error {
 	}
 	if tile.Owner < Unowned || tile.Owner >= TribeCount {
 		return fmt.Errorf("归属无效: %v", p)
+	}
+	if tile.RestUntil < 0 || tile.RestUntil > s.Calendar.Elapsed+1 {
+		return fmt.Errorf("占领休整记录无效: %v", p)
 	}
 	if tile.Farm != FarmNone && (tile.Owner == Unowned || tile.Terrain != Grassland) {
 		return fmt.Errorf("农田地块无效: %v", p)

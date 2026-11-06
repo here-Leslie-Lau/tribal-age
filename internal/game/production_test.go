@@ -7,7 +7,7 @@ import (
 )
 
 func ownTile(s *State, id int, p Point, terrain Terrain, farm FarmStage) {
-	s.Tiles[p.Y][p.X] = Tile{Terrain: terrain, Owner: id, Farm: farm}
+	s.Tiles[p.Y][p.X] = Tile{Terrain: terrain, Owner: id, Farm: farm, Settlement: s.Tiles[p.Y][p.X].Settlement}
 	s.Tribes[id].Explored[p.Y][p.X] = true
 }
 

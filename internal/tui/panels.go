@@ -12,7 +12,7 @@ func (m *model) panelLines(v game.View, f game.Forecast, width, rows int) []stri
 	switch m.dialog {
 	case endDialog:
 		return []string{"确认结束本月？", fmt.Sprintf("还剩%d行动点；电脑随后行动，并结算本月生产、粮耗和人口。", v.Self.AP),
-			fmt.Sprintf("粮食收支%+d，预计余粮%d，预计缺粮%d。", f.NetFood, f.FoodAfter, f.Shortage), confirmHint}
+			fmt.Sprintf("按当前局势：收支%+d，余粮%d，缺粮%d；未计军令结果。", f.NetFood, f.FoodAfter, f.Shortage), confirmHint}
 	case quitDialog:
 		return []string{"确认退出游戏？", "尚不支持存档，退出或关闭终端后，本局进度会丢失。", confirmHint}
 	case trainingDialog:
@@ -21,12 +21,11 @@ func (m *model) panelLines(v game.View, f game.Forecast, width, rows int) []stri
 	case productionDialog:
 		return productionPanel(v, f)
 	case helpDialog:
-		return []string{"帮助：方向键/WASD选地块；[]是光标，@是首都。", "E探索 C占领 B建田；T训练 P生产 L领地 V切换视图。",
-			"Enter结束月份、Q退出需Y确认；Esc/?返回。", "底色看领土/地形；无色看P/2/3。统计?表示暂无已知领地。"}
+		return []string{"帮助：方向键/WASD选地块；[]是光标，@是首都，A1等是军队/部落。", "E探索 C占领 B建田；T训练 P生产 L领地 V视图 M军队。", "1/2/3选军 F行军/进攻 O占领 H驻守；军令月底执行。", "Enter结束月份、Q退出需Y确认；Esc/?返回。"}
 	}
 	heading := "最近消息："
 	if !v.Self.Alive() {
-		heading = "部落灭亡，本局结束；可查看地图或Q退出。"
+		heading = "部落已退出竞争，本局结束；可查看地图或Q退出。"
 	}
 	messages := wrapLines(m.messages, width)
 	from := max(0, len(messages)-(rows-1))

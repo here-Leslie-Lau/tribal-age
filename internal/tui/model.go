@@ -24,6 +24,7 @@ const (
 	productionDialog
 	helpDialog
 	territoryDialog
+	armyDialog
 )
 
 type tileBinding struct {
@@ -48,6 +49,8 @@ type model struct {
 	dialog         dialog
 	workTarget     int
 	territoryIndex int
+	armySlot       int
+	armyPeople     int
 	mapView        mapStyle
 	plainMap       bool
 	messages       []string
@@ -97,6 +100,10 @@ func (m *model) handleKey(key string) tea.Cmd {
 		m.territoryKey(key)
 		return nil
 	}
+	if m.dialog == armyDialog {
+		m.armyKey(key)
+		return nil
+	}
 	if m.dialog != noDialog {
 		return m.confirm(key)
 	}
@@ -108,6 +115,9 @@ func (m *model) gameKey(key string) {
 	if delta, ok := movement(key); ok {
 		m.cursor.X = min(game.Width-1, max(0, m.cursor.X+delta.X))
 		m.cursor.Y = min(game.Height-1, max(0, m.cursor.Y+delta.Y))
+		return
+	}
+	if m.armyGameKey(key) {
 		return
 	}
 	for _, binding := range tileBindings {

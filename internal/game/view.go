@@ -14,6 +14,7 @@ type View struct {
 	Self     Tribe
 	Cells    []Cell
 	Legal    []Action
+	Armies   []ArmyInfo // Currently visible forces, without enemy military orders.
 }
 
 func (s *State) View(id int) (View, error) {
@@ -21,6 +22,7 @@ func (s *State) View(id int) (View, error) {
 		return View{}, fmt.Errorf("部落编号无效")
 	}
 	v := View{Calendar: s.Calendar, Self: s.Tribes[id]}
+	v.Armies = s.visibleArmies(id)
 	for y, row := range s.Tiles {
 		for x, tile := range row {
 			p := Point{x, y}

@@ -24,7 +24,7 @@ func New(seed int64) *State {
 		}
 	}
 	for id, p := range capitals {
-		s.Tiles[p.Y][p.X] = Tile{Terrain: Grassland, Owner: id}
+		s.Tiles[p.Y][p.X] = Tile{Terrain: Grassland, Owner: id, Settlement: true}
 		s.Tiles[p.Y-1][p.X].Terrain = Forest
 		s.Tiles[p.Y+1][p.X].Terrain = Grassland
 		s.Tribes[id] = newTribe(id, p)

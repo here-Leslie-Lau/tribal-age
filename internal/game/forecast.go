@@ -1,7 +1,7 @@
 package game
 
 // Forecast describes this month's production and food payment without changing
-// stocks, population, progress, or the calendar. It assumes no further actions.
+// stocks, population, progress, or the calendar. Queued military outcomes are not predicted.
 type Forecast struct {
 	Production Production
 	Demand     int
@@ -15,7 +15,7 @@ func ForecastFor(v View) Forecast {
 	v.Cells = append([]Cell(nil), v.Cells...)
 	for i := range v.Cells {
 		if v.Cells[i].Tile.Owner == v.Self.ID {
-			v.Cells[i].Tile.Farm = v.Cells[i].Tile.Farm.advance()
+			v.Cells[i].Tile.Farm = v.Cells[i].Tile.advanceFarm(v.Calendar.Elapsed, v.BlockedProduction(v.Cells[i].Point))
 		}
 	}
 	p := ProductionFor(v, v.Calendar.Season())

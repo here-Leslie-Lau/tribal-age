@@ -123,10 +123,7 @@ func renderSummary(s *game.State, requested, actual int) string {
 	var b strings.Builder
 	fmt.Fprintf(&b, "结算摘要（无胜利判定）\n种子：%d | 请求 %d 个月 | 实际推进 %d 个月\n%s\n", s.Seed, requested, actual, s.Calendar)
 	for id, t := range s.Tribes {
-		state := "存活"
-		if !t.Alive() {
-			state = "灭亡"
-		}
+		state := t.Status()
 		v, _ := s.View(id) // id comes from the fixed tribe array, so it is always valid.
 		territory, farms, building := counts(v)
 		fmt.Fprintf(&b, "%s [%s] 人口 %d/%d 士兵 %d 粮食 %d 木材 %d 领土 %d 农田 %d 在建 %d 增长 %d/%d 连续缺粮 %d 月\n", t.Name, state, t.Population, game.CarryingCapacity(v), t.Soldiers, t.Food, t.Wood, territory, farms, building, t.GrowthProgress, game.GrowthScale, t.HungerMonths)

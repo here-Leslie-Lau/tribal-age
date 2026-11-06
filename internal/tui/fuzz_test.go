@@ -17,10 +17,11 @@ func FuzzKeyboardAndResizeInvariants(f *testing.F) {
 	f.Add([]byte{255, 0, 64, 127, 128, 9, 10, 14, 10})
 	f.Add([]byte{18, 2, 2, 0, 9, 18, 12, 14, 10})
 	f.Add([]byte{131, 19, 18, 12, 19, 140, 0, 2, 9})
+	f.Add([]byte{20, 9, 21, 0, 24, 9, 10, 20, 22, 17, 9})
 	f.Setenv("NO_COLOR", "")
 	f.Setenv("TERM", "xterm-256color")
 	profiles := []colorprofile.Profile{colorprofile.Unknown, colorprofile.NoTTY, colorprofile.ASCII, colorprofile.ANSI, colorprofile.ANSI256, colorprofile.TrueColor}
-	keys := []string{"up", "left", "down", "right", "e", "c", "b", "t", "p", "enter", "y", "n", "esc", "?", "q", "+", "-", "0", "l", "v"}
+	keys := []string{"up", "left", "down", "right", "e", "c", "b", "t", "p", "enter", "y", "n", "esc", "?", "q", "+", "-", "0", "l", "v", "m", "1", "2", "3", "f", "o", "h"}
 	f.Fuzz(func(t *testing.T, data []byte) {
 		s := game.New(42)
 		m := newModel(s)

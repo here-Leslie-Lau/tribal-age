@@ -17,11 +17,12 @@ func (s *State) EndMonth(mode Mode) error {
 		return fmt.Errorf("所有部落已经灭亡")
 	}
 	if mode == Interactive && !s.Tribes[0].Alive() {
-		return fmt.Errorf("玩家部落已经灭亡")
+		return fmt.Errorf("玩家部落已经%s", s.Tribes[0].Status())
 	}
 	if err := s.runMonthlyAI(mode); err != nil {
 		return err
 	}
+	s.resolveMilitary()
 	s.advanceFarms()
 	s.produce()
 	newlyExtinct := s.settlePopulation()
@@ -34,7 +35,7 @@ func (s *State) advanceFarms() {
 	for y := range s.Tiles {
 		for x := range s.Tiles[y] {
 			tile := &s.Tiles[y][x]
-			next := tile.Farm.advance()
+			next := tile.advanceFarm(s.Calendar.Elapsed, s.hostileAt(tile.Owner, Point{x, y}))
 			if next == tile.Farm {
 				continue
 			}
@@ -54,6 +55,7 @@ func (s *State) produce() {
 			continue
 		}
 		v, _ := s.View(id) // id comes from the fixed tribe array.
+		s.explainPausedProduction(v)
 		p := ProductionFor(v, s.Calendar.Season())
 		s.Tribes[id].Food += p.Food
 		s.Tribes[id].Wood += p.Wood
@@ -84,6 +86,7 @@ func (s *State) consume(id int) {
 	oldSoldiers := t.Soldiers
 	t.Population -= loss
 	t.Soldiers = min(t.Soldiers, t.Population)
+	s.reconcileArmies(id)
 	s.emitOwn(id, fmt.Sprintf("饥荒：连续缺粮 %d 月，缺粮 %d，人口减少 %d，士兵减少 %d。", t.HungerMonths, demand-paid, loss, oldSoldiers-t.Soldiers))
 }
 
@@ -93,6 +96,7 @@ func (s *State) clearExtinct(id int) {
 	t.Food, t.Wood, t.Soldiers, t.AP = 0, 0, 0, 0
 	t.GrowthProgress, t.HungerMonths = 0, 0
 	t.ForestPriority = 0
+	t.Armies = [MaxArmies]Army{}
 	for y := range s.Tiles {
 		for x := range s.Tiles[y] {
 			tile := &s.Tiles[y][x]
@@ -111,12 +115,15 @@ func (s *State) runMonthlyAI(mode Mode) error {
 	}
 	for id := first; id < TribeCount; id++ {
 		if s.Tribes[id].Alive() {
+			if err := s.prepareDefense(id); err != nil {
+				return err
+			}
 			if err := s.runAI(id); err != nil {
 				return err
 			}
 		}
 	}
-	return nil
+	return s.planMilitaryAI(first)
 }
 
 func (s *State) settlePopulation() []int {

@@ -50,7 +50,7 @@ func (s *State) checkAction(id int, a Action) error {
 	}
 	t := s.Tribes[id]
 	if !t.Alive() {
-		return fmt.Errorf("部落已经灭亡")
+		return fmt.Errorf("部落已经%s", t.Status())
 	}
 	if t.AP < ActionAP {
 		return fmt.Errorf("行动点不足，需要 %d 点", ActionAP)
@@ -59,6 +59,9 @@ func (s *State) checkAction(id int, a Action) error {
 		return fmt.Errorf("未知行动")
 	}
 	if a.Kind == Train {
+		if s.hostileAt(id, t.Capital) {
+			return fmt.Errorf("首都有敌军，不能训练")
+		}
 		return checkTraining(t)
 	}
 	if !a.Target.Valid() {
@@ -105,6 +108,9 @@ func (s *State) checkClaim(id int, p Point) error {
 	if !s.adjacentTo(id, p) {
 		return fmt.Errorf("占领目标必须邻接自有领土")
 	}
+	if s.hostileAt(id, p) {
+		return fmt.Errorf("目标有敌军，不能由平民占领")
+	}
 	if t.Wood < ClaimWood {
 		return fmt.Errorf("木材不足，占领需要 %d", ClaimWood)
 	}
@@ -115,6 +121,9 @@ func (s *State) checkFarm(id int, p Point) error {
 	tile := s.Tiles[p.Y][p.X]
 	if tile.Owner != id {
 		return fmt.Errorf("只能在自有领土建农田")
+	}
+	if s.hostileAt(id, p) {
+		return fmt.Errorf("目标有敌军，不能建造")
 	}
 	if tile.Terrain != Grassland {
 		return fmt.Errorf("农田只能建在草原")

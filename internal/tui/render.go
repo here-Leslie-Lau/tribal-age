@@ -46,6 +46,9 @@ func (m *model) screen() string {
 	if m.dialog == territoryDialog {
 		return m.territoryScreen()
 	}
+	if m.dialog == armyDialog {
+		return m.armyScreen()
+	}
 	l := screenLayout(m.width, m.height, m.cursor)
 	v := m.playerView()
 	f := game.ForecastFor(v)
@@ -60,7 +63,11 @@ func (m *model) screen() string {
 	for i := 0; i < l.rows+2; i++ {
 		lines = append(lines, fitRow(lineAt(left, i), l.leftWidth)+l.gap+fitRow(lineAt(right, i), l.rightWidth))
 	}
-	lines = append(lines, strings.Repeat("-", l.width), selectedInfo(v, m.cursor), actionHints(v, m.cursor))
+	hints := actionHints(v, m.cursor)
+	if v.Self.Armies[m.armySlot].People > 0 {
+		hints = m.armyHint(v)
+	}
+	lines = append(lines, strings.Repeat("-", l.width), selectedInfo(v, m.cursor)+visibleArmyText(v, m.cursor), hints)
 	if l.roomy {
 		lines = append(lines, "")
 	}
@@ -71,7 +78,7 @@ func (m *model) screen() string {
 	if l.roomy {
 		lines = append(lines, "")
 	}
-	lines = append(lines, "方向键/WASD移动 | E探索 C占领 B建田 | T训练 P生产 L领地",
+	lines = append(lines, "方向键/WASD移动 | E探索 C占领 B建田 | T训练 P生产 L领地 M军队",
 		"Enter结束本月(需Y确认) | V切换视图 ?帮助 | Q退出(无存档)")
 	return l.frame(lines)
 }

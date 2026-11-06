@@ -59,6 +59,11 @@ func territoryActivity(v game.View, f game.Forecast) map[game.Point]string {
 	for _, p := range f.Production.Unstaffed {
 		activity[p] = "人手不足，预计停产"
 	}
+	for _, c := range v.Cells {
+		if reason := v.ProductionPause(c); reason != "" {
+			activity[c.Point] = reason + "，暂停经营"
+		}
+	}
 	return activity
 }
 

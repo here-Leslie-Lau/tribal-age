@@ -17,6 +17,7 @@ func scenarioState() *State {
 		p := Point{X: 2 + id*8, Y: 3}
 		s.Tribes[id] = newTribe(id, p)
 		s.Tiles[p.Y][p.X].Owner = id
+		s.Tiles[p.Y][p.X].Settlement = true
 	}
 	return s
 }

@@ -65,6 +65,9 @@ func (s mapStyle) cell(c *game.Cell, self game.Tribe, selected bool) string {
 			text = text[:1]
 		}
 	}
+	return s.markedCell(text, c, selected)
+}
+func (s mapStyle) markedCell(text string, c *game.Cell, selected bool) string {
 	if selected {
 		text = "[" + text + "]"
 	} else {

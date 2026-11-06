@@ -84,7 +84,7 @@ func productionState() *game.State {
 	p := s.Tribes[0].Capital
 	for i := 0; i < 6; i++ {
 		q := game.Point{X: p.X + i%3, Y: p.Y + i/3}
-		tile := game.Tile{Terrain: game.Forest, Owner: 0}
+		tile := game.Tile{Terrain: game.Forest, Owner: 0, Settlement: q == p}
 		if i < 2 {
 			tile.Terrain, tile.Farm = game.Grassland, game.FarmReady
 		}

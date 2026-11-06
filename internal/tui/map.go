@@ -25,7 +25,11 @@ func mapLines(v game.View, cursor game.Point, l layout, style mapStyle) []string
 		fmt.Fprintf(&row, "%02d |", y)
 		for x := l.left; x < l.left+l.cols; x++ {
 			selected := cursor == (game.Point{X: x, Y: y})
-			row.WriteString(style.cell(known[y][x], v.Self, selected))
+			if glyph := armyMapGlyph(v, game.Point{X: x, Y: y}); glyph != "" {
+				row.WriteString(style.markedCell(glyph, known[y][x], selected))
+			} else {
+				row.WriteString(style.cell(known[y][x], v.Self, selected))
+			}
 		}
 		lines = append(lines, row.String())
 	}
@@ -60,7 +64,14 @@ func selectedInfo(v game.View, cursor game.Point) string {
 		} else if c.Tile.Owner != game.Unowned {
 			owner = fmt.Sprintf("部落%d领土", c.Tile.Owner+1)
 		}
-		return prefix + fmt.Sprintf("%s / %s / %s", c.Tile.Terrain, owner, farmInfo(c.Tile.Farm))
+		text := prefix + fmt.Sprintf("%s / %s / %s", c.Tile.Terrain, owner, farmInfo(c.Tile.Farm))
+		if c.Tile.Settlement {
+			text += fmt.Sprintf(" / 聚落承载%d", game.CapitalCapacity)
+		}
+		if reason := v.ProductionPause(c); reason != "" {
+			text += " / " + reason
+		}
+		return text
 	}
 	return prefix + "未探索（地形和归属未知）"
 }
