@@ -110,6 +110,7 @@ func (m *model) startupScreen() string {
 }
 func (m *model) endMonth() {
 	from := len(m.state.Events)
+	month := m.state.Calendar.Elapsed
 	err := savegame.EndMonth(m.state, m.save)
 	if errors.Is(err, savegame.ErrAutosave) {
 		m.saveFailed = true
@@ -119,6 +120,11 @@ func (m *model) endMonth() {
 		m.savedMonth = m.state.Calendar.Elapsed
 	}
 	m.record(from, err)
+	if m.state.Calendar.Elapsed != month {
+		if r, ok := m.settledReport(); ok && r.Destroyed() {
+			m.openReports()
+		}
+	}
 }
 func (m *model) saveHint() string {
 	if m.save == nil {

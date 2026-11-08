@@ -53,6 +53,9 @@ func (s *State) relocateCapital(id int) {
 		}
 	}
 	t.Defeated = true
+	for slot, a := range t.Armies {
+		s.recordArmyChange(id, slot, a, 0, DefeatDisbanded)
+	}
 	t.Soldiers, t.Food, t.Wood, t.AP = 0, 0, 0, 0
 	t.GrowthProgress, t.HungerMonths, t.ForestPriority = 0, 0, 0
 	t.Armies = [MaxArmies]Army{}

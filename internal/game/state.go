@@ -112,12 +112,14 @@ type Event struct {
 
 // State has one owner and one local RNG. It is not shared between goroutines.
 type State struct {
-	Seed     int64
-	Calendar Calendar
-	Tiles    [Height][Width]Tile
-	Tribes   [TribeCount]Tribe
-	Events   []Event
-	rng      *rand.Rand
+	Seed         int64
+	Calendar     Calendar
+	Tiles        [Height][Width]Tile
+	Tribes       [TribeCount]Tribe
+	Events       []Event
+	Reports      []MilitaryReport
+	ReportsSince int // First month with structured records; old saves start at load time.
+	rng          *rand.Rand
 }
 
 func (s *State) AllExtinct() bool {

@@ -84,8 +84,11 @@ func (s *State) consume(id int) {
 	}
 	loss := min(t.Population, demand-paid)
 	oldSoldiers := t.Soldiers
+	oldReserve := t.ReserveSoldiers()
 	t.Population -= loss
 	t.Soldiers = min(t.Soldiers, t.Population)
+	reserveLoss := min(oldReserve, oldSoldiers-t.Soldiers)
+	s.recordArmyChange(id, ReserveSlot, Army{People: oldReserve, Position: t.Capital}, oldReserve-reserveLoss, FamineLoss)
 	s.reconcileArmies(id)
 	s.emitOwn(id, fmt.Sprintf("饥荒：连续缺粮 %d 月，缺粮 %d，人口减少 %d，士兵减少 %d。", t.HungerMonths, demand-paid, loss, oldSoldiers-t.Soldiers))
 }

@@ -8,7 +8,7 @@ import (
 	"tribal-age/internal/game"
 )
 
-const commandHelp = "命令：help | map | status | explore x y | claim x y | farm x y | train | work wood n | work auto | end | quit\n坐标从 0 开始；只有 end 推进月份。work wood n 优先采木 n 格，work auto 恢复自动；安排会沿用且不花行动点。\n"
+const commandHelp = "命令：help | map | status | reports | explore x y | claim x y | farm x y | train | work wood n | work auto | end | quit\n坐标从 0 开始；只有 end 推进月份。reports回看己方战报，不花行动点。work wood n 优先采木 n 格，work auto 恢复自动；安排会沿用且不花行动点。\n"
 
 type command struct {
 	name    string
@@ -35,7 +35,7 @@ func parseCommand(line string) (command, error) {
 			return command{}, err
 		}
 		c.forests = forests
-	case "help", "map", "status", "train", "end", "quit":
+	case "help", "map", "status", "reports", "train", "end", "quit":
 		if len(parts) != 1 {
 			return command{}, fmt.Errorf("%s 不接受额外参数", c.name)
 		}

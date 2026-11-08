@@ -25,6 +25,7 @@ const (
 	helpDialog
 	territoryDialog
 	armyDialog
+	reportDialog
 )
 
 type tileBinding struct {
@@ -43,21 +44,22 @@ var tileBindings = [...]tileBinding{
 
 // Only Update writes game state. Views and production drafts own copied data.
 type model struct {
-	state          *game.State
-	cursor         game.Point
-	width, height  int
-	dialog         dialog
-	workTarget     int
-	territoryIndex int
-	armySlot       int
-	armyPeople     int
-	mapView        mapStyle
-	plainMap       bool
-	messages       []string
-	startup        *startupMenu
-	save           func(*game.State) error
-	savedMonth     int
-	saveFailed     bool
+	state                     *game.State
+	cursor                    game.Point
+	width, height             int
+	dialog                    dialog
+	workTarget                int
+	territoryIndex            int
+	armySlot                  int
+	armyPeople                int
+	mapView                   mapStyle
+	plainMap                  bool
+	messages                  []string
+	startup                   *startupMenu
+	save                      func(*game.State) error
+	savedMonth                int
+	saveFailed                bool
+	reportIndex, reportOffset int
 }
 
 func newModel(s *game.State) *model {
@@ -97,6 +99,10 @@ func (m *model) handleKey(key string) tea.Cmd {
 		return m.confirm(key)
 	}
 	if !m.fits() {
+		return nil
+	}
+	if m.dialog == reportDialog {
+		m.reportKey(key)
 		return nil
 	}
 	if m.dialog == productionDialog {
@@ -150,6 +156,8 @@ func (m *model) controlKey(key string) {
 		m.openTerritories()
 	case "v":
 		m.mapView.terrain = !m.mapView.terrain
+	case "r":
+		m.openReports()
 	}
 }
 

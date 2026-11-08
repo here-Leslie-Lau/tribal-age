@@ -30,6 +30,7 @@ func (s *State) militaryAudience(p Point) uint8 {
 func (s *State) resolveMilitary() {
 	f := s.militarySnapshot()
 	r := resolveClashes(f)
+	s.recordClashes(f, r)
 	s.emitMilitaryResults(f, r)
 	s.applyMilitaryResults(f, r)
 	s.occupyAfterClashes(f, r)
@@ -56,7 +57,7 @@ func (s *State) emitMilitaryResults(f []fighter, r clashResult) {
 }
 func (s *State) applyMilitaryResults(f []fighter, r clashResult) {
 	for i, a := range f {
-		s.loseArmyPeople(a.Owner, a.Slot, r.Losses[i])
+		s.loseArmyPeople(a.Owner, a.Slot, r.Losses[i], CombatLoss)
 		army := &s.Tribes[a.Owner].Armies[a.Slot]
 		if army.People == 0 {
 			continue
@@ -76,10 +77,11 @@ func (s *State) cleanBattleDeaths(f []fighter) {
 		}
 	}
 }
-func (s *State) loseArmyPeople(id, slot, n int) {
+func (s *State) loseArmyPeople(id, slot, n int, cause ArmyChangeCause) {
 	t := &s.Tribes[id]
 	a := &t.Armies[slot]
 	n = min(n, a.People)
+	s.recordArmyChange(id, slot, *a, a.People-n, cause)
 	a.People -= n
 	t.Population -= n
 	t.Soldiers -= n
@@ -99,7 +101,7 @@ func (s *State) settleArmySupply(id, slot int, level SupplyLevel) {
 	}
 	loss := (a.People*SupplyAttritionPercent + 99) / 100
 	s.emitOwn(id, fmt.Sprintf("军队%c持续断供%d个月，损失%d人。", 'A'+slot, a.Unsupplied, loss))
-	s.loseArmyPeople(id, slot, loss)
+	s.loseArmyPeople(id, slot, loss, SupplyLoss)
 }
 
 // Reserve soldiers absorb military famine losses first. Then trim deployed
@@ -110,6 +112,7 @@ func (s *State) reconcileArmies(id int) {
 	for slot := MaxArmies - 1; slot >= 0 && excess > 0; slot-- {
 		a := &t.Armies[slot]
 		loss := min(excess, a.People)
+		s.recordArmyChange(id, slot, *a, a.People-loss, FamineLoss)
 		a.People -= loss
 		excess -= loss
 		if a.People == 0 {

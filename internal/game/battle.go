@@ -12,6 +12,7 @@ type clashResult struct {
 	Positions []Point
 	Engaged   []bool
 	Losses    []int
+	Contacts  [][]bool // The same final engagement graph used to calculate casualties.
 }
 
 // All intents are resolved from copies. Blocked departures propagate in batches,
@@ -34,6 +35,7 @@ func resolveClashes(f []fighter) clashResult {
 	for i := range f {
 		r.Losses[i] = incomingLoss(f, edges, i)
 	}
+	r.Contacts = edges
 	return r
 }
 func collides(a, b fighter, toA, toB Point) bool {

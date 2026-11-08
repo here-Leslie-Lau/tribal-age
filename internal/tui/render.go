@@ -52,6 +52,9 @@ func (m *model) screen() string {
 	if m.dialog == armyDialog {
 		return m.armyScreen()
 	}
+	if m.dialog == reportDialog {
+		return m.reportScreen()
+	}
 	l := screenLayout(m.width, m.height, m.cursor)
 	v := m.playerView()
 	f := game.ForecastFor(v)
@@ -81,7 +84,7 @@ func (m *model) screen() string {
 	if l.roomy {
 		lines = append(lines, "")
 	}
-	lines = append(lines, "方向键/WASD移动 | E探索 C占领 B建田 | T训练 P生产 L领地 M军队",
+	lines = append(lines, "方向键/WASD移动 | E探索 C占领 B建田 | T训练 P生产 L领地 M军队 R战报",
 		"Enter月结(需Y) | V切换 ?帮助 Q退出 | "+m.saveHint())
 	return l.frame(lines)
 }

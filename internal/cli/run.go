@@ -121,6 +121,9 @@ func executeSaved(s *game.State, c command, save func(*game.State) error) (strin
 	if c.name == "help" {
 		return commandHelp, nil
 	}
+	if c.name == "reports" {
+		return renderMilitaryReports(s), nil
+	}
 	from := len(s.Events)
 	switch c.name {
 	case "map", "status":

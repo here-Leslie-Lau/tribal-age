@@ -9,19 +9,21 @@ import (
 	"unicode"
 )
 
-const SaveVersion = 1
+const SaveVersion = 2
 const MaxSaveBytes = 32 << 20
 
-// Version 1 stores rule state, never a limited player View or a terminal model.
-// The RNG is used only by New; replaying that version's generator restores its
+// Snapshots store rule state, never a limited View or a terminal model.
+// Versions 1 and 2 use RNG only in New: replaying that generator restores its
 // exact post-generation position. Turn-time randomness requires a new format.
 type savedGame struct {
-	Version  int          `json:"version"`
-	Seed     *int64       `json:"seed"`
-	Calendar *Calendar    `json:"calendar"`
-	Tiles    [][]Tile     `json:"tiles"`
-	Tribes   []savedTribe `json:"tribes"`
-	Events   []Event      `json:"events"`
+	Version      int              `json:"version"`
+	Seed         *int64           `json:"seed"`
+	Calendar     *Calendar        `json:"calendar"`
+	Tiles        [][]Tile         `json:"tiles"`
+	Tribes       []savedTribe     `json:"tribes"`
+	Events       []Event          `json:"events"`
+	Reports      []MilitaryReport `json:"reports"`
+	ReportsSince *int             `json:"reports_since"`
 }
 type savedTribe struct {
 	Tribe
@@ -40,7 +42,7 @@ func (s *State) MarshalSave() ([]byte, error) {
 	if err := validateSavedRecords(s); err != nil {
 		return nil, err
 	}
-	record := savedGame{Version: SaveVersion, Seed: &s.Seed, Calendar: &s.Calendar, Events: s.Events}
+	record := savedGame{Version: SaveVersion, Seed: &s.Seed, Calendar: &s.Calendar, Events: s.Events, Reports: s.Reports, ReportsSince: &s.ReportsSince}
 	for _, row := range s.Tiles {
 		record.Tiles = append(record.Tiles, append([]Tile(nil), row[:]...))
 	}
@@ -66,7 +68,7 @@ func UnmarshalSave(data []byte) (*State, error) {
 	if err := decoder.Decode(new(any)); err != io.EOF {
 		return nil, fmt.Errorf("存档末尾存在额外内容")
 	}
-	if record.Version != SaveVersion {
+	if record.Version != SaveVersion && record.Version != 1 {
 		return nil, fmt.Errorf("不支持的存档版本%d（当前%d）", record.Version, SaveVersion)
 	}
 	return record.restore()
@@ -78,6 +80,9 @@ func (r savedGame) restore() (*State, error) {
 	s := New(*r.Seed)
 	s.Calendar = *r.Calendar
 	s.Events = r.Events
+	if err := r.restoreReports(s); err != nil {
+		return nil, err
+	}
 	if err := r.restoreTiles(s); err != nil {
 		return nil, err
 	}
@@ -111,6 +116,9 @@ func (r savedTribe) restore() (Tribe, error) {
 const saveNumberLimit = int(^uint(0)>>1) / 1000000
 
 func validateSavedRecords(s *State) error {
+	if err := validateSavedReports(s); err != nil {
+		return err
+	}
 	if s.Calendar.Elapsed < 0 || s.Calendar.Elapsed > saveNumberLimit {
 		return fmt.Errorf("存档日历超出安全范围")
 	}

@@ -72,7 +72,7 @@ func (m *model) armyScreen() string {
 		if slot == m.armySlot {
 			marker = "> "
 		}
-		text := fmt.Sprintf("%s军队%c：未编组", marker, 'A'+slot)
+		text := fmt.Sprintf("%s军队%c：%s", marker, 'A'+slot, m.armyEndNote(slot))
 		if a.People > 0 {
 			text = fmt.Sprintf("%s军队%c：%d人 (%d,%d) 补给%s / %s", marker, 'A'+slot, a.People, a.Position.X, a.Position.Y, visibleArmySupply(v, slot), armyOrderText(a.Order))
 		}

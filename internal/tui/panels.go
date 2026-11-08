@@ -21,15 +21,20 @@ func (m *model) panelLines(v game.View, f game.Forecast, width, rows int) []stri
 	case productionDialog:
 		return productionPanel(v, f)
 	case helpDialog:
-		return []string{"帮助：方向键/WASD选地块；[]是光标，@是首都，A1等是军队/部落。", "E探索 C占领 B建田；T训练 P生产 L领地 V视图 M军队。", "1/2/3选军 F行军/进攻 O占领 H驻守；军令月底执行。", "Enter结束月份、Q退出需Y确认；Esc/?返回。"}
+		return []string{"帮助：方向键/WASD选地块；[]是光标，@是首都，A1等是军队/部落。", "E探索 C占领 B建田；T训练 P生产 L领地 V视图 M军队 R战报。", "1/2/3选军 F行军/进攻 O占领 H驻守；军令月底执行。", "战报←/→切换 ↑/↓滚动；Enter月结/Q退出需Y；Esc/?返回。"}
 	}
 	heading := "最近消息："
 	if !v.Self.Alive() {
 		heading = "部落已退出竞争，本局结束；可查看地图或Q退出。"
 	}
+	head := []string{heading}
+	if summary := m.militarySummary(); summary != "" {
+		pinned := wrapLines([]string{summary}, width)
+		head = append(head, pinned[:min(len(pinned), max(0, rows-1))]...)
+	}
 	messages := wrapLines(m.messages, width)
-	from := max(0, len(messages)-(rows-1))
-	return append([]string{heading}, messages[from:]...)
+	from := max(0, len(messages)-max(0, rows-len(head)))
+	return append(head, messages[from:]...)
 }
 
 func productionPanel(v game.View, f game.Forecast) []string {

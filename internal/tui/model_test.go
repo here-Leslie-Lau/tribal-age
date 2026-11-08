@@ -31,6 +31,14 @@ func press(m *model, names ...string) tea.Cmd {
 func snapshot(s *game.State) game.State {
 	before := *s
 	before.Events = append([]game.Event(nil), s.Events...)
+	before.Reports = append([]game.MilitaryReport(nil), s.Reports...)
+	for i := range before.Reports {
+		before.Reports[i].Changes = append([]game.ArmyChange(nil), s.Reports[i].Changes...)
+		before.Reports[i].Battles = append([]game.BattleReport(nil), s.Reports[i].Battles...)
+		for j := range before.Reports[i].Battles {
+			before.Reports[i].Battles[j].Armies = append([]game.BattleArmy(nil), s.Reports[i].Battles[j].Armies...)
+		}
+	}
 	return before
 }
 

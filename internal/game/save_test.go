@@ -3,6 +3,7 @@ package game
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"reflect"
 	"testing"
 )
@@ -95,7 +96,7 @@ func TestSavePreservesMonthStartAfterPaidAction(t *testing.T) {
 }
 func TestSaveRejectsMalformedAndInvalidData(t *testing.T) {
 	good, _ := New(42).MarshalSave()
-	for _, data := range [][]byte{nil, []byte("null"), []byte("{}"), good[:len(good)/2], append(append([]byte(nil), good...), []byte(" {}")...), bytes.Replace(good, []byte(`"version": 1`), []byte(`"version": 999`), 1)} {
+	for _, data := range [][]byte{nil, []byte("null"), []byte("{}"), good[:len(good)/2], append(append([]byte(nil), good...), []byte(" {}")...), bytes.Replace(good, []byte(fmt.Sprintf(`"version": %d`, SaveVersion)), []byte(`"version": 999`), 1)} {
 		if _, err := UnmarshalSave(data); err == nil {
 			t.Fatalf("accepted malformed archive %.30s", data)
 		}

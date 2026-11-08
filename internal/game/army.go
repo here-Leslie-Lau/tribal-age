@@ -74,6 +74,11 @@ func (s *State) SetArmySize(id, slot, people int) error {
 		return err
 	}
 	t.AP -= ActionAP
+	before := a
+	if before.People == 0 {
+		before.Position = t.Capital
+	}
+	s.recordArmyChange(id, slot, before, people, Reorganized)
 	if people == 0 {
 		t.Armies[slot] = Army{}
 	} else {
